@@ -34,3 +34,8 @@ PLUGINS = (
 PYGMENTS_RST_OPTIONS = {'linenos': 'table'}
 
 THEME = "themes/plumage"
+
+# Plumage Things
+
+DISCLAIMER = "Views expressed here are my own, but you should adopt them immediately."
+SITE_THUMBNAIL = "https://avatars.githubusercontent.com/u/2692416?v=4"
