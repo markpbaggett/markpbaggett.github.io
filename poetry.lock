@@ -61,6 +61,20 @@ python-versions = ">=3.6"
 pytz = ">=0a"
 
 [[package]]
+name = "ghp-import"
+version = "2.1.0"
+description = "Copy your docs directly to the gh-pages branch."
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+python-dateutil = ">=2.8.1"
+
+[package.extras]
+dev = ["wheel", "flake8", "markdown", "twine"]
+
+[[package]]
 name = "jinja2"
 version = "3.1.2"
 description = "A very fast and expressive template engine."
@@ -301,7 +315,7 @@ python-versions = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "547f2af832cf1b0e0b96a098899ad965ab0ec9cf70425c66bc6b50c0e12d5365"
+content-hash = "c9765d72efd611abab0d0a1266be0195a510b624480970e6e6c3583510d91536"
 
 [metadata.files]
 blinker = []
@@ -311,6 +325,7 @@ cssmin = []
 cssselect = []
 docutils = []
 feedgenerator = []
+ghp-import = []
 jinja2 = [
     {file = "Jinja2-3.1.2-py3-none-any.whl", hash = "sha256:6088930bfe239f0e6710546ab9c19c9ef35e29792895fed6e6e31a023a182a61"},
     {file = "Jinja2-3.1.2.tar.gz", hash = "sha256:31351a702a408a9e7595a8fc6150fc3f43bb6bf7e319770cbc0db9df9437e852"},

@@ -9,6 +9,7 @@ python = "^3.10"
 pelican = "^4.8.0"
 pelican-social = "^0.2.0"
 plumage = {git = "https://github.com/kdeldycke/plumage", rev = "develop"}
+ghp-import = "^2.1.0"
 
 [tool.poetry.dev-dependencies]
 
