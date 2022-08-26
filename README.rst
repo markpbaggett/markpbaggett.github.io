@@ -2,4 +2,4 @@
 markpbaggett.github.io
 ######################
 
-Various Pelican things for serving `<markpbaggett.github.io>`_
+Various Pelican things for serving `personal website <https://markpbaggett.github.io>`_.
