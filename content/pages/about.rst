@@ -1,9 +1,7 @@
 About
 #####
 
-This blog serves as an outlet for me to write about projects and other things I work on that are under appreciated or
-have little to no value to others.  While I hope others read, the primary audience is my current and future self. I hope
-to find through this outlet a new appreciation for the things I do and hope it inspires me to do more inventive things.
+Feeling cute. Might delete later.
 
 Online Elsewhere
 ----------------
