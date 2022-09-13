@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>  Mistakes Were Made: Revisiting Our Implementation of the IIIF Presentation id Property
+ | Principia Nugae</title>
+
+    <meta name="author" content="Mark Baggett"/>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/magnific-popup.js/1.1.0/magnific-popup.min.css"/>
+    <link rel="stylesheet" href="/theme/css/jquery.mglass.css"/>
+    <link rel="stylesheet" href="/theme/css/pygment-solarized-dark.css"/>
+    <link rel="stylesheet" href="/theme/css/style.css"/>
+
+    <!-- Fonts -->
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'/>
+    <link href='https://fonts.googleapis.com/css?family=Istok+Web' rel='stylesheet' type='text/css'/>
+    <link href='https://fonts.googleapis.com/css?family=Droid+Sans+Mono' rel='stylesheet' type='text/css'/>
+
+
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+
+    <!-- Feeds -->
+
+
+  </head>
+
+  <body>
+
+    <div class="container">
+
+      <div class="page-header">
+          <a href="" class="avatar-container pull-left">
+            <div class="avatar ">
+              <div class="side"><img src="https://avatars.githubusercontent.com/u/2692416?v=4" class="img-responsive"/></div>
+            </div>
+          </a>
+        <h1><a href="">Principia Nugae</a> <small></small></h1>
+      </div>
+
+      <nav class="navbar navbar-default">
+
+        <!-- Hamburger menu for mobile -->
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#plumage-navbar-collapse-1" aria-expanded="false">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="" title="">Principia Nugae</a>
+        </div>
+
+        <!-- Menus and search forms -->
+        <div class="collapse navbar-collapse" id="plumage-navbar-collapse-1">
+
+          <ul class="nav navbar-nav">
+<li >
+                  <a href="/pages/about.html">About</a>
+                </li>
+<li >
+                  <a href="/category/misc.html">misc</a>
+                </li>
+<li >
+                  <a href="/category/python.html">python</a>
+                </li>
+          </ul>
+
+
+
+        </div>
+
+      </nav>
+
+    </div>
+
+
+    <div class="container main">
+
+
+      <div class="row">
+        <div class=" col-md-9  ">
+  <h1>
+    <a href="/drafts/iiif-id-property.html" rel="bookmark" title="Permalink to Mistakes Were Made: Revisiting Our Implementation of the IIIF Presentation id Property">Mistakes Were Made: Revisiting Our Implementation of the  IIIF Presentation id Property</a>
+  </h1>
+        </div>
+      </div>
+
+      <div class="row">
+
+
+        <div class=" col-md-9 " id="content" role="main">
+  
+
+  <div>
+    <p>The <code>id</code> property is without a doubt one of the most prevalent properties found throughout a IIIF manifest. As the API
+documentation states, <a class="reference external" href="https://iiif.io/api/presentation/3.0/#5-resource-structure">all resource types</a> <code>MUST</code>
+have an <code>id</code> property, and because of this the property is littered across the manifest. The definition of the
+<code>id</code> property is simply <a class="reference external" href="https://iiif.io/api/presentation/3.0/#32-technical-properties">the URI that identifies the resource</a>.
+At first glance, this seems relatively trivial but deeper inspection of the API docs demonstrates the need to understand
+the property with a little more care.</p>
+<p>The API documentation specifies some important details about the use of the <code>id</code> property within an embedded resource.
+An embedded resource refers to a resource where the entire JSON representation of a resource is found within another resource.
+According to the API docs, the value of <code>id</code> for an embedded resource <code>MAY</code> be the URI of the embedding resource
+with a unique fragment on the end, but only in the case that the embedded resource is not a <code>Canvas</code>. The API
+documentation goes further to state explicitly that a <code>Canvas</code> must have its own URI without a fragment.</p>
+<p>It's important to understand what is meant by fragment. <a class="reference external" href="https://iiif.io/api/presentation/3.0/#53-canvas">Section 5.3 of the IIIF Presentation API docs</a>
+explains that the canvas must not contain a fragment (a <code>#</code> followed by further characters), as this would make it
+impossible to refer to a segment of the Canvas’s area using the media fragment syntax of #xywh= for spatial regions,
+and/or #t= for temporal segments. It also states that canvases <code>MAY</code> be able to be dereferenced separately from the
+Manifest via their URIs as well as being embedded.</p>
+<p>A few years ago when we first implemented IIIF, this and other details regarding the <code>id</code> property were things we
+missed. For the <code>id</code> of the canvas, we concatenated a pattern to the end of the value of the <code>id</code> property of
+manifest based on the order of the canvas.</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><span class="x">public function buildCanvas ($index, $uri, $pid) {</span>
+
+<span class="x">    $canvasId = $uri . &#39;/canvas/&#39; . $index;</span>
+<span class="x">    $title = $this-&gt;xpath-&gt;query(&#39;titleInfo[not(@type=&quot;alternative&quot;)]&#39;)[0];</span>
+<span class="x">    $canvas = (object) [</span>
+<span class="hll"><span class="x">            &quot;id&quot; =&gt; $canvasId,</span>
+</span><span class="x">            &quot;type&quot; =&gt; &#39;Canvas&#39;,</span>
+<span class="x">            &quot;label&quot; =&gt; self::getLanguageArray($title, &#39;label&#39;, &#39;none&#39;),</span>
+<span class="x">            &quot;thumbnail&quot; =&gt; self::buildThumbnail(200, 200)</span>
+<span class="x">    ];</span>
+<span class="x">}</span>
+</pre></div></td></tr></table></div>
+<p>This results in a URI like below within the <code>id</code> property of a Canvas:</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span>
+<span class="normal">8</span>
+<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;items&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="hll"><span class="w">            </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://digital.lib.utk.edu/assemble/manifest/rftaart/74/canvas/0&quot;</span><span class="p">,</span><span class="w"></span>
+</span><span class="w">            </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Canvas&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;items&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">]</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div></td></tr></table></div>
+<p>While we concatenated a pattern to the end of the manifest's <code>id</code> property to represent the canvas, this is technically
+not an issue since the concatenated value does not result in a fragment. The issue instead relates to other rules
+regarding the <code>id</code> property. According to the docs, the value of the <code>id</code> must be a string and a URI. The
+API documentation has these rules about <code>id</code> naming conventions:</p>
+<blockquote>
+The value must be a string, and the value must be an HTTP(S) URI for resources defined in this specification. If the resource is retrievable via HTTP(S), then the URI must be the URI at which it is published.</blockquote>
+<p>Additionally, the API docs include other important rules for producers and consumers regarding dereferencing URIs.</p>
+<blockquote>
+The existence of an HTTP(S) URI in the id property does not mean that the URI will always be dereferencable. If the resource with the id property is embedded, it may also be dereferenceable. If the resource is referenced, it must be dereferenceable.</blockquote>
+
+  </div>
+
+
+
+        </div>
+
+          <div class="col-md-3">
+  <div class="well">
+
+    <p><abbr title="2022-09-12T00:00:00-04:00"><i class="fa fa-calendar"></i> Mon 12 September 2022</abbr></p>
+
+      <p><address>
+        <i class="fa fa-user"></i> By
+          <a href="/author/mark-baggett.html" rel="author">Mark Baggett</a>
+      </address></p>
+
+    <hr/>
+
+      <p>
+      </p>
+      <hr/>
+
+
+
+  </div>
+            
+          </div>
+
+      </div>
+
+    </div>
+
+    <!-- TODO: make footer sticky -->
+    <footer class="container-fluid">
+      <div class="container">
+        <div class="row">
+
+            <div class="col-md-2">
+                <h5>Social</h5>
+                <ul class="list-unstyled">
+                  <li>  <a href="https://github.com/markpbaggett">
+      <i class="fa fa-github"></i>
+    github
+  </a></li>
+                </ul>
+            </div>
+            <div class="col-md-2">
+            </div>
+
+          <div class="col-md-2">
+            <h5>Elsewhere:</h5>
+            <ul class="list-unstyled">
+              <li><a href="https://www.discogs.com/user/mbagget1/collection?sort=max&sort_order=desc">Discogs</a></li>
+            </ul>
+          </div>
+
+          <div class="col-md-2 text-muted">
+            <h5>Copyright notice</h5>
+            <p>© Copyright 2022 Mark Baggett.</p>
+          </div>
+
+          <div class="col-md-2 text-muted">
+            <h5>Disclaimer</h5>
+              <p>Views expressed here are my own, but you should adopt them immediately.</p>
+          </div>
+
+          <div class="col-md-2">
+          </div>
+
+        </div>
+      </div>
+
+      <h5 class="text-right"><a href="#"><i class="fa fa-arrow-up"></i> Back to top</a></h5>
+
+      <div class="container">
+      </div>
+
+    </footer>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/magnific-popup.js/1.1.0/jquery.magnific-popup.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fitvids/1.1.0/jquery.fitvids.min.js"></script>
+    <script src="/theme/js/jquery.mglass.js"></script>
+    <script src="/theme/js/application.js"></script>
+
+  </body>
+</html>

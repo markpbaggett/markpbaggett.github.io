@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>  Mistakes Were Made: Creating id Properties for Embedded Resources in IIIF Presentation v3
+ | Principia Nugae</title>
+
+    <meta name="author" content="Mark Baggett"/>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/magnific-popup.js/1.1.0/magnific-popup.min.css"/>
+    <link rel="stylesheet" href="/theme/css/jquery.mglass.css"/>
+    <link rel="stylesheet" href="/theme/css/pygment-solarized-dark.css"/>
+    <link rel="stylesheet" href="/theme/css/style.css"/>
+
+    <!-- Fonts -->
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'/>
+    <link href='https://fonts.googleapis.com/css?family=Istok+Web' rel='stylesheet' type='text/css'/>
+    <link href='https://fonts.googleapis.com/css?family=Droid+Sans+Mono' rel='stylesheet' type='text/css'/>
+
+
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+
+    <!-- Feeds -->
+
+
+  </head>
+
+  <body>
+
+    <div class="container">
+
+      <div class="page-header">
+          <a href="" class="avatar-container pull-left">
+            <div class="avatar ">
+              <div class="side"><img src="https://avatars.githubusercontent.com/u/2692416?v=4" class="img-responsive"/></div>
+            </div>
+          </a>
+        <h1><a href="">Principia Nugae</a> <small></small></h1>
+      </div>
+
+      <nav class="navbar navbar-default">
+
+        <!-- Hamburger menu for mobile -->
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#plumage-navbar-collapse-1" aria-expanded="false">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="" title="">Principia Nugae</a>
+        </div>
+
+        <!-- Menus and search forms -->
+        <div class="collapse navbar-collapse" id="plumage-navbar-collapse-1">
+
+          <ul class="nav navbar-nav">
+<li >
+                  <a href="/pages/about.html">About</a>
+                </li>
+<li  class="active" >
+                  <a href="/category/iiif.html">iiif <span class="sr-only">(current)</span></a>
+                </li>
+<li >
+                  <a href="/category/misc.html">misc</a>
+                </li>
+<li >
+                  <a href="/category/python.html">python</a>
+                </li>
+          </ul>
+
+
+
+        </div>
+
+      </nav>
+
+    </div>
+
+
+    <div class="container main">
+
+
+      <div class="row">
+        <div class=" col-md-9  ">
+  <h1>
+    <a href="/iiif-id-property.html" rel="bookmark" title="Permalink to Mistakes Were Made: Creating id Properties for Embedded Resources in IIIF Presentation v3">Mistakes Were Made: Creating id Properties for Embedded Resources in IIIF Presentation v3</a>
+  </h1>
+        </div>
+      </div>
+
+      <div class="row">
+
+
+        <div class=" col-md-9 " id="content" role="main">
+  
+
+  <div>
+    <p>The <code>id</code> property is without a doubt one of the most prevalent properties found throughout a IIIF manifest. As the API
+documentation states, <a class="reference external" href="https://iiif.io/api/presentation/3.0/#5-resource-structure">all resource types</a> <code>MUST</code>
+have an <code>id</code> property, and because of this the property is littered across the manifest. In our most basic work
+type, simple image, the <code>id</code> property is used 13 times. The definition of the <code>id</code> property is simply
+<a class="reference external" href="https://iiif.io/api/presentation/3.0/#32-technical-properties">the URI that identifies the resource</a>.
+At first glance, this seems relatively trivial but deeper inspection of the API docs demonstrates the need to understand
+the property with a little more care.</p>
+<p>The API documentation specifies some important details about the use of the <code>id</code> property within an embedded resource.
+An embedded resource refers to a resource where the entire JSON representation of a resource is found within another resource.
+According to the API docs, the value of <code>id</code> for an embedded resource <code>MAY</code> be the URI of the embedding resource
+with a unique fragment on the end, but only in the case that the embedded resource is not a <code>Canvas</code>. The API
+documentation goes further to state explicitly that a <code>Canvas</code> must have its own URI without a fragment.</p>
+<p>It's important to understand what is meant by fragment. <a class="reference external" href="https://iiif.io/api/presentation/3.0/#53-canvas">Section 5.3 of the IIIF Presentation API docs</a>
+explains that the canvas must not contain a fragment (a <code>#</code> followed by further characters), as this would make it
+impossible to refer to a segment of the Canvas’s area using the media fragment syntax of #xywh= for spatial regions,
+and/or #t= for temporal segments. It also states that canvases <code>MAY</code> be able to be dereferenced separately from the
+Manifest via their URIs as well as being embedded.</p>
+<p>A few years ago when we first implemented IIIF, this and other details regarding the <code>id</code> property were things we
+missed or didn't fully understand. To create <code>id</code> properties for canvases, we concatenated a pattern to the end of
+the value of the <code>id</code> property of the manifest based on the order of the Canvas within the work.</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><span class="x">public function buildCanvas ($index, $uri, $pid) {</span>
+
+<span class="hll"><span class="x">    $canvasId = $uri . &#39;/canvas/&#39; . $index;</span>
+</span><span class="x">    $title = $this-&gt;xpath-&gt;query(&#39;titleInfo[not(@type=&quot;alternative&quot;)]&#39;)[0];</span>
+<span class="x">    $canvas = (object) [</span>
+<span class="x">            &quot;id&quot; =&gt; $canvasId,</span>
+<span class="x">            &quot;type&quot; =&gt; &#39;Canvas&#39;,</span>
+<span class="x">            &quot;label&quot; =&gt; self::getLanguageArray($title, &#39;label&#39;, &#39;none&#39;),</span>
+<span class="x">            &quot;thumbnail&quot; =&gt; self::buildThumbnail(200, 200)</span>
+<span class="x">    ];</span>
+<span class="x">}</span>
+</pre></div></td></tr></table></div>
+<p>This concatenation results in a URI like below within the <code>id</code> property of a Canvas:</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span>
+<span class="normal">7</span>
+<span class="normal">8</span>
+<span class="normal">9</span></pre></div></td><td class="code"><div><pre><span></span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;items&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="hll"><span class="w">            </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://digital.lib.utk.edu/assemble/manifest/rftaart/74/canvas/0&quot;</span><span class="p">,</span><span class="w"></span>
+</span><span class="w">            </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Canvas&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;items&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">]</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div></td></tr></table></div>
+<p>While we concatenated a pattern to the end of the manifest's <code>id</code> property to represent the canvas, this is not a
+problem since the concatenated value does not contain a fragment (a <code>#</code> followed by further characters. The issue
+instead relates to other rules regarding the <code>id</code> property that we didn't fully understand. According to the docs,
+the value of the <code>id</code> must be a string and a URI. The API documentation has these rules about <code>id</code> property
+naming conventions:</p>
+<blockquote>
+The value must be a string, and the value must be an HTTP(S) URI for resources defined in this specification. If the resource is retrievable via HTTP(S), then the URI must be the URI at which it is published.</blockquote>
+<p>Additionally, the API docs include other important rules for producers and consumers regarding dereferencing URIs.</p>
+<blockquote>
+The existence of an HTTP(S) URI in the id property does not mean that the URI will always be dereferencable. If the resource with the id property is embedded, it may also be dereferenceable. If the resource is referenced, it must be dereferenceable.</blockquote>
+<p>As the docs state, a canvas <code>id</code> <code>MAY</code> be dereferenceable. It doesn't have to be, but it <code>MAY</code>. The
+problem is that a request on the URI for our <code>id</code> on the Canvas returns the entire manifest for the work the canvas
+is embedded within.</p>
+<p>While this may seem harmless, it is not and can have unintended consequences. Recently, I decided to experiment with adding
+cartographic information found within our descriptive metadata to our IIIF manifests.  The catalyst for this was the
+creation of the <a class="reference external" href="https://github.com/CenterForDigitalHumanities">Research Computing Group at Saint Louis University's</a>
+<a class="reference external" href="https://github.com/CenterForDigitalHumanities/navplace-viewer/">navPlace viewer</a>. This viewer makes use of GeoJSON
+found within a IIIF manifest in a <code>navPlace</code> property. The <code>navPlace</code> property is available in an
+<a class="reference external" href="https://iiif.io/api/extension/navplace/">extension</a> to the IIIF Presentation API.  The extension describes the
+property as such:</p>
+<blockquote>
+The navPlace property identifies a single or multiple geographic areas pertinent to a resource using a GeoJSON Feature Collection containing one or more Features. These areas should be bounded discrete areas of the map akin to extents. These areas do not imply any level of accuracy, temporality, or state of existence.</blockquote>
+<p>The <code>navPlace</code> property is allowed on IIIF collections, manifests, ranges, and canvases. The flexibility of the
+extension and property causes challenges for consuming applications as its not clear where to find the property. This is
+further complicated by the fact that the resources that contain embedded <code>navPlace</code> properties may themsleves be embedded
+or referenced.  Because of that, <a class="reference external" href="https://github.com/CenterForDigitalHumanities/navplace-viewer/">navPlace viewer</a>
+assumes that it should attempt to dereference all <code>id</code> properties of resources that <code>navPlace</code> can be
+embedded in order to ensure all <code>navPlace</code> properties are found.</p>
+<p>Adding <code>navPlace</code> to our manifests caused no problems, but trying to implement <a class="reference external" href="https://github.com/CenterForDigitalHumanities/navplace-viewer/">navPlace viewer</a>
+to make use of that content did. For the first time that we are aware of, a consuming application started to attempt to
+dereference our canvases embedded in our manifests. It does this because its not sure whether the canvas is referenced
+or embedded. For us, while we treat canvases as embedded resources, each of the <code>id</code> properties found within a
+canvas is derefernceable. According to the API specification, this is okay.  The only problem is that it is not
+dereferenceable for the canvas but instead the manifest it is embedded within. This is also an issue with our ranges.
+This causes an endless loop for the viewer and makes it impossible to serve our manifests.</p>
+<p>Since this discovery, we have fixed this dereferencing issue. Now, <code>id</code> properties are only dereferenceable if they
+in fact represent the resource they are embedded within. Without <a class="reference external" href="https://github.com/CenterForDigitalHumanities/navplace-viewer/">navPlace viewer</a>,
+I'm unsure we would have ever realized we had a problem.</p>
+<p>The viewer has raised other questions for me. 1. How should a
+consuming application know that a resource is embedded or referenced? If the <code>id</code> is derferenceable, should it be
+assumed that it may contain additional properties not found within the current resource? 2. What do other viewers do? Do
+Mirador, Universal Viewer, Clover, or IIIF Media Viewer have methods that perform the same level of dereferncing? The
+IIIF Book contains a recipe entitled, <a class="reference external" href="https://iiif.io/api/cookbook/recipe/0001-mvm-image/">Simplest Manifest - Image</a>.
+The recipe contains the minimal number of properties to be able to show how to serve an image.  The recipe embeds all
+the resources to ensure that users can understand what must be included.  That being said, if you were building a
+presentation manifest producer, you could simplify the JSON here to just this as long the canvas is derefenceable:</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span></pre></div></td><td class="code"><div><pre><span></span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;@context&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://iiif.io/api/presentation/3/context.json&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://iiif.io/api/cookbook/recipe/0001-mvm-image/manifest.json&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Manifest&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;label&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;en&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">      </span><span class="s2">&quot;Image 1&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="p">]</span><span class="w"></span>
+<span class="w">  </span><span class="p">},</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;items&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://iiif.io/api/cookbook/recipe/0001-mvm-image/canvas/p1&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Canvas&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">  </span><span class="p">]</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div></td></tr></table></div>
+<p>Finally, if these resources can all be referenced, 3. how long may it take a viewer like <a class="reference external" href="https://github.com/CenterForDigitalHumanities/navplace-viewer/">navPlace viewer</a>,
+to parse and render a Collection resource that references thousands of book like objects with many pages and table of contents
+objects that may be dereferencable, and 4. would it not be better to add a property for specifying whether a resource is
+embedded or referenced so that the consuming application doesn't have to attempt dereferencing all these resources?</p>
+<p>These questions are things that I'm thinking about and discussing with others, but this experience has reminded me how
+important it is to read and understand a specification when implementing a new application.</p>
+
+  </div>
+
+
+
+        </div>
+
+          <div class="col-md-3">
+  <div class="well">
+
+    <p><abbr title="2022-09-13T00:00:00-04:00"><i class="fa fa-calendar"></i> Tue 13 September 2022</abbr></p>
+
+      <p><address>
+        <i class="fa fa-user"></i> By
+          <a href="/author/mark-baggett.html" rel="author">Mark Baggett</a>
+      </address></p>
+
+    <hr/>
+
+      <p>
+              <a href="/category/iiif.html" rel="tag"
+                  data-toggle="tooltip" class="label label-info"
+                  title="1 article in this category">iiif</a>
+            <a href="/tag/presentation-api.html" data-toggle="tooltip"
+      class="label label-default"
+      title="1 article with this tag">presentation-api</a>
+      </p>
+      <hr/>
+
+
+
+  </div>
+            
+          </div>
+
+      </div>
+
+    </div>
+
+    <!-- TODO: make footer sticky -->
+    <footer class="container-fluid">
+      <div class="container">
+        <div class="row">
+
+            <div class="col-md-2">
+                <h5>Social</h5>
+                <ul class="list-unstyled">
+                  <li>  <a href="https://github.com/markpbaggett">
+      <i class="fa fa-github"></i>
+    github
+  </a></li>
+                </ul>
+            </div>
+            <div class="col-md-2">
+            </div>
+
+          <div class="col-md-2">
+            <h5>Elsewhere:</h5>
+            <ul class="list-unstyled">
+              <li><a href="https://www.discogs.com/user/mbagget1/collection?sort=max&sort_order=desc">Discogs</a></li>
+            </ul>
+          </div>
+
+          <div class="col-md-2 text-muted">
+            <h5>Copyright notice</h5>
+            <p>© Copyright 2022 Mark Baggett.</p>
+          </div>
+
+          <div class="col-md-2 text-muted">
+            <h5>Disclaimer</h5>
+              <p>Views expressed here are my own, but you should adopt them immediately.</p>
+          </div>
+
+          <div class="col-md-2">
+          </div>
+
+        </div>
+      </div>
+
+      <h5 class="text-right"><a href="#"><i class="fa fa-arrow-up"></i> Back to top</a></h5>
+
+      <div class="container">
+      </div>
+
+    </footer>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/magnific-popup.js/1.1.0/jquery.magnific-popup.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fitvids/1.1.0/jquery.fitvids.min.js"></script>
+    <script src="/theme/js/jquery.mglass.js"></script>
+    <script src="/theme/js/application.js"></script>
+
+  </body>
+</html>
