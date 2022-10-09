@@ -26,22 +26,32 @@ object in Geonames.
       </mods:cartographics>
    </mods:subject>
 
-While we've historically mapped this data, we have never actually leveraged it to display in some sort of mapping service.
+While we historically mapped this data, we never actually leveraged it and used it for display or navigation.
 Recently, the `Center for Digital Humanities at Saint Louis University <https://github.com/CenterForDigitalHumanities/>`_
 released a new `Beta viewer <https://centerfordigitalhumanities.github.io/navplace-viewer/>`_ that leverages
 :code:`navPlace` properties in IIIF manifests and displays them on a map. Depending on where the data is found within the
-manifest depends on how it functions in the viewer. Since we have this data easily available, I decided to add :code:`navPlace`
-properties to our manifests.
+manifest depends on how it functions in the viewer. Since we already had this data easily available, I decided to add
+code to add :code:`navPlace` properties to our manifests via our `IIIF Presentation v3 service <https://github.com/utkdigitalinitiatives/iiif_assemble>`_.
 
-The :code:`navPlace` extension is not very prescriptive; the property can be added to most classes in IIIF presentation v3.
-According to the specification, a :code:`navPlace` property is allowed on a :code:`Collection`, :code:`Manifest`,
-:code:`Range`, or :code:`Canvas`. Rather than adding the property everywhere, I decided to start small by adding them
-only to :code:`Manifests` and :code:`Ranges`. While one may argue that it makes most sense to add this information
-to the :code:`Collection`, I would argue that the behavior of
-`navPlace viewer <https://centerfordigitalhumanities.github.io/navplace-viewer/>`_ makes this unnecessary. That's
-because the viewer attempts to dereference all :code:`id` properties in search of other :code:`navPlace` properties
-that may appear in embedded classes. Because of this, a :code:`Collection` that references a :code:`Manifest` with an
-:code:`navPlace` property will render those if the :code:`Collection` is passed to the viewer.
+The `IIIF Presentation Specification <https://iiif.io/api/presentation/3.0/>`_ does not provide a resource property
+designed specifically for geographic location. Because of this, the `navPlace extension <https://iiif.io/api/extension/navplace/>`_
+exists. The :code:`navPlace` `extension <https://iiif.io/api/extension/navplace/>`_ is not very prescriptive. The
+property is allowed in most classes defined by the `IIIF presentation v3 specification <https://iiif.io/api/presentation/3.0/>`_.
+According to the extension, a :code:`navPlace` property is allowed on a IIIF :code:`Collection`, :code:`Manifest`,
+:code:`Range`, and / or :code:`Canvas`.
+
+Rather than adding the property everywhere, I decided to start small by adding the properties only to :code:`Manifests`
+and :code:`Ranges`. While one may argue that it makes most sense to add this information to the :code:`Collection`, I
+would argue that the behavior of `navPlace viewer <https://centerfordigitalhumanities.github.io/navplace-viewer/>`_
+makes this unnecessary. That's because the viewer attempts to dereference all :code:`id` properties in search of other
+:code:`navPlace` properties that may appear in embedded classes. Because of this, a :code:`Collection` that references a
+:code:`Manifest` with an :code:`navPlace` property will render those if the :code:`Collection` is passed to the viewer.
+
+In the next few sections, I will describe our implementation, how the viewer consumes and makes use of them, and personal
+desires for future consuming applications.
+
+navPlace on Manifests
+---------------------
 
 For our manifests, if a work has a MODS record with a match for the XPATH query
 :code:`subject[@authority="geonames"]/cartographics/coordinates`, it will get a :code:`navPlace` property on the
