@@ -2,7 +2,7 @@ Implementing navPlace: Desires and Possibilities for Consuming Applications
 ###########################################################################
 
 :date: 2022-10-10
-:tags: presentation-api, navplace
+:tags: presentation-api, navplace, content-state-api
 :category: iiif
 :slug: implementing-navplace
 :authors: Mark Baggett
