@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>  Implementing navPlace: Desires and Possiblities for Consuming Applications
+ | Principia Nugae</title>
+
+    <meta name="author" content="Mark Baggett"/>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/magnific-popup.js/1.1.0/magnific-popup.min.css"/>
+    <link rel="stylesheet" href="/theme/css/jquery.mglass.css"/>
+    <link rel="stylesheet" href="/theme/css/pygment-solarized-dark.css"/>
+    <link rel="stylesheet" href="/theme/css/style.css"/>
+
+    <!-- Fonts -->
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'/>
+    <link href='https://fonts.googleapis.com/css?family=Istok+Web' rel='stylesheet' type='text/css'/>
+    <link href='https://fonts.googleapis.com/css?family=Droid+Sans+Mono' rel='stylesheet' type='text/css'/>
+
+
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+
+    <!-- Feeds -->
+
+
+  </head>
+
+  <body>
+
+    <div class="container">
+
+      <div class="page-header">
+          <a href="" class="avatar-container pull-left">
+            <div class="avatar ">
+              <div class="side"><img src="https://avatars.githubusercontent.com/u/2692416?v=4" class="img-responsive"/></div>
+            </div>
+          </a>
+        <h1><a href="">Principia Nugae</a> <small></small></h1>
+      </div>
+
+      <nav class="navbar navbar-default">
+
+        <!-- Hamburger menu for mobile -->
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#plumage-navbar-collapse-1" aria-expanded="false">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="" title="">Principia Nugae</a>
+        </div>
+
+        <!-- Menus and search forms -->
+        <div class="collapse navbar-collapse" id="plumage-navbar-collapse-1">
+
+          <ul class="nav navbar-nav">
+<li >
+                  <a href="/pages/about.html">About</a>
+                </li>
+<li  class="active" >
+                  <a href="/category/iiif.html">iiif <span class="sr-only">(current)</span></a>
+                </li>
+<li >
+                  <a href="/category/misc.html">misc</a>
+                </li>
+<li >
+                  <a href="/category/python.html">python</a>
+                </li>
+          </ul>
+
+
+
+        </div>
+
+      </nav>
+
+    </div>
+
+
+    <div class="container main">
+
+
+      <div class="row">
+        <div class=" col-md-9  ">
+  <h1>
+    <a href="/drafts/implementing-navplace.html" rel="bookmark" title="Permalink to Implementing navPlace: Desires and Possiblities for Consuming Applications">Implementing navPlace: Desires and Possiblities for Consuming Applications</a>
+  </h1>
+        </div>
+      </div>
+
+      <div class="row">
+
+
+        <div class=" col-md-9 " id="content" role="main">
+  
+
+  <div>
+    <p>For many years, the University of Tennessee Libraries has utilized <a class="reference external" href="https://www.geonames.org/">GeoNames</a> as a source
+for dereferencing and reconciling geographic location data related to our works. The GeoNames API allows consumers to retrieve
+many metadata elements about a place for free including &quot;point&quot; information in the form of latitude and longitude. The
+relative ease of adding geographic data has encouraged us to add this data to our MODS records at
+<code>/mods/subject[geographic]/cartographics/coordinates</code> near its corresponding string and reference to the source
+object in Geonames.</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><span class="nt">&lt;mods:subject</span> <span class="na">authority=</span><span class="s">&quot;geonames&quot;</span> <span class="na">valueURI=</span><span class="s">&quot;http://sws.geonames.org/4624443&quot;</span><span class="nt">&gt;</span>
+   <span class="nt">&lt;mods:geographic&gt;</span>Gatlinburg<span class="nt">&lt;/mods:geographic&gt;</span>
+   <span class="nt">&lt;mods:cartographics&gt;</span>
+<span class="hll">      <span class="nt">&lt;mods:coordinates&gt;</span>35.71453, -83.51189<span class="nt">&lt;/mods:coordinates&gt;</span>
+</span>   <span class="nt">&lt;/mods:cartographics&gt;</span>
+<span class="nt">&lt;/mods:subject&gt;</span>
+</pre></div></td></tr></table></div>
+<p>While we've historically mapped this data, we have never actually leveraged it to display in some sort of mapping service.
+Recently, the <a class="reference external" href="https://github.com/CenterForDigitalHumanities/">Center for Digital Humanities at Saint Louis University</a>
+released a new <a class="reference external" href="https://centerfordigitalhumanities.github.io/navplace-viewer/">Beta viewer</a> that leverages
+<code>navPlace</code> properties in IIIF manifests and displays them on a map. Depending on where the data is found within the
+manifest depends on how it functions in the viewer. Since we have this data easily available, I decided to add <code>navPlace</code>
+properties to our manifests.</p>
+<p>The <code>navPlace</code> extension is not very prescriptive; the property can be added to most classes in IIIF presentation v3.
+According to the specification, a <code>navPlace</code> property is allowed on a <code>Collection</code>, <code>Manifest</code>,
+<code>Range</code>, or <code>Canvas</code>. Rather than adding the property everywhere, I decided to start small by adding them
+only to <code>Manifests</code> and <code>Ranges</code>. While one may argue that it makes most sense to add this information
+to the <code>Collection</code>, I would argue that the behavior of
+<a class="reference external" href="https://centerfordigitalhumanities.github.io/navplace-viewer/">navPlace viewer</a> makes this unnecessary. That's
+because the viewer attempts to dereference all <code>id</code> properties in search of other <code>navPlace</code> properties
+that may appear in embedded classes. Because of this, a <code>Collection</code> that references a <code>Manifest</code> with an
+<code>navPlace</code> property will render those if the <code>Collection</code> is passed to the viewer.</p>
+<div class="section" id="navplace-on-manifests">
+<h2>navPlace on Manifests</h2>
+<p>For our manifests, if a work has a MODS record with a match for the XPATH query
+<code>subject[&#64;authority=&quot;geonames&quot;]/cartographics/coordinates</code>, it will get a <code>navPlace</code> property on the
+<code>Manifest</code>. The <code>navPlace</code> property always has three properties: <code>id</code>, <code>type</code>, and <code>features</code>.
+The value of the <code>type</code> property is <code>FeatureCollection</code>. The <code>id</code> property is unique for the
+<code>FeatureCollection</code> and is equal to the base manifest <code>id</code> concatenated with the value <code>/feature-collection/1</code>.</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;navPlace&quot;</span><span class="p">:</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://digital.lib.utk.edu/notdereferenceable/assemble/manifest/rfta/8/feature-collection/1&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;FeatureCollection&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;features&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div></td></tr></table></div>
+<p>The <code>features</code> property is an array. In the array are <code>Feature</code> bodies for each matching value of
+<code>mods:subject[&#64;authority=&quot;geonames&quot;]/mods:cartographics/mods:coordinates</code>.  Each <code>Feature</code> has the following
+properties: <code>id</code>, <code>type</code>, <code>properties</code>, and <code>geometry</code>.</p>
+<p>The <code>type</code> property is always <code>Feature</code>.  To ensure uniqueness, each <code>Feature</code> <code>id</code> is equal to
+the <code>id</code> of the <code>id</code> of the Manifest concatenated with <code>/feature/1</code>. The <code>properties</code> property
+is described <a class="reference external" href="https://iiif.io/api/extension/navplace/#32-context-considerations-for-geojson-ld-properties">here</a>.
+For our implementation, the <code>label</code> property is the only thing used and it is equal to a concatenation of the Manifest
+label and the related geographic location from the corresponding <code>mods:subject[&#64;authority=&quot;geonames]/mods:geographic</code>.
+Finally, <code>geometry</code> will always be a <code>Point</code> with the cartographics in the <code>coordinates</code> property in
+the format of &quot;longitude, latitude&quot;. It's always <code>Point</code> because our data is always point data. For many of our
+geographic place names, it would be much better to have polygon data, but this information isn't freely available from
+GeoNames.</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span></pre></div></td><td class="code"><div><pre><span></span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;navPlace&quot;</span><span class="p">:</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://digital.lib.utk.edu/notdereferenceable/assemble/manifest/rfta/8/feature-collection/1&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;FeatureCollection&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;features&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">                </span><span class="p">{</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="s2">&quot;https://digital.lib.utk.edu/notdereferenceable/assemble/manifest/rfta/8/feature/1&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;Feature&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;properties&quot;</span><span class="p">:{</span><span class="w"></span>
+<span class="w">                       </span><span class="nt">&quot;label&quot;</span><span class="p">:{</span><span class="w"></span>
+<span class="w">                          </span><span class="nt">&quot;en&quot;</span><span class="p">:[</span><span class="w"></span>
+<span class="w">                             </span><span class="s2">&quot;Interview with Seemona -- Gatlinburg&quot;</span><span class="w"></span>
+<span class="w">                          </span><span class="p">]</span><span class="w"></span>
+<span class="w">                       </span><span class="p">}</span><span class="w"></span>
+<span class="w">                    </span><span class="p">},</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;geometry&quot;</span><span class="p">:{</span><span class="w"></span>
+<span class="w">                       </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;Point&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">                       </span><span class="nt">&quot;coordinates&quot;</span><span class="p">:[</span><span class="w"></span>
+<span class="w">                          </span><span class="mf">-83.51189</span><span class="p">,</span><span class="w"></span>
+<span class="w">                          </span><span class="mf">35.71453</span><span class="w"></span>
+<span class="w">                       </span><span class="p">]</span><span class="w"></span>
+<span class="w">                    </span><span class="p">}</span><span class="w"></span>
+<span class="w">                </span><span class="p">}</span><span class="w"></span>
+<span class="w">            </span><span class="p">]</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div></td></tr></table></div>
+</div>
+
+  </div>
+
+
+
+        </div>
+
+          <div class="col-md-3">
+  <div class="well">
+
+    <p><abbr title="2022-10-05T00:00:00-04:00"><i class="fa fa-calendar"></i> Wed 05 October 2022</abbr></p>
+
+      <p><address>
+        <i class="fa fa-user"></i> By
+          <a href="/author/mark-baggett.html" rel="author">Mark Baggett</a>
+      </address></p>
+
+    <hr/>
+
+      <p>
+              <a href="/category/iiif.html" rel="tag"
+                  data-toggle="tooltip" class="label label-info"
+                  title="1 article in this category">iiif</a>
+            <a href="/tag/presentation-api.html" data-toggle="tooltip"
+      class="label label-default"
+      title="1 article with this tag">presentation-api</a>
+      </p>
+      <hr/>
+
+
+
+  </div>
+            
+          </div>
+
+      </div>
+
+    </div>
+
+    <!-- TODO: make footer sticky -->
+    <footer class="container-fluid">
+      <div class="container">
+        <div class="row">
+
+            <div class="col-md-2">
+                <h5>Social</h5>
+                <ul class="list-unstyled">
+                  <li>  <a href="https://github.com/markpbaggett">
+      <i class="fa fa-github"></i>
+    github
+  </a></li>
+                </ul>
+            </div>
+            <div class="col-md-2">
+            </div>
+
+          <div class="col-md-2">
+            <h5>Elsewhere:</h5>
+            <ul class="list-unstyled">
+              <li><a href="https://www.discogs.com/user/mbagget1/collection?sort=max&sort_order=desc">Discogs</a></li>
+            </ul>
+          </div>
+
+          <div class="col-md-2 text-muted">
+            <h5>Copyright notice</h5>
+            <p>© Copyright 2022 Mark Baggett.</p>
+          </div>
+
+          <div class="col-md-2 text-muted">
+            <h5>Disclaimer</h5>
+              <p>Views expressed here are my own, but you should adopt them immediately.</p>
+          </div>
+
+          <div class="col-md-2">
+          </div>
+
+        </div>
+      </div>
+
+      <h5 class="text-right"><a href="#"><i class="fa fa-arrow-up"></i> Back to top</a></h5>
+
+      <div class="container">
+      </div>
+
+    </footer>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/magnific-popup.js/1.1.0/jquery.magnific-popup.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fitvids/1.1.0/jquery.fitvids.min.js"></script>
+    <script src="/theme/js/jquery.mglass.js"></script>
+    <script src="/theme/js/application.js"></script>
+
+  </body>
+</html>

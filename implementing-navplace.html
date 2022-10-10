@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>  Implementing navPlace: Desires and Possibilities for Consuming Applications
+ | Principia Nugae</title>
+
+    <meta name="author" content="Mark Baggett"/>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/magnific-popup.js/1.1.0/magnific-popup.min.css"/>
+    <link rel="stylesheet" href="/theme/css/jquery.mglass.css"/>
+    <link rel="stylesheet" href="/theme/css/pygment-solarized-dark.css"/>
+    <link rel="stylesheet" href="/theme/css/style.css"/>
+
+    <!-- Fonts -->
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'/>
+    <link href='https://fonts.googleapis.com/css?family=Istok+Web' rel='stylesheet' type='text/css'/>
+    <link href='https://fonts.googleapis.com/css?family=Droid+Sans+Mono' rel='stylesheet' type='text/css'/>
+
+
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+
+    <!-- Feeds -->
+
+
+  </head>
+
+  <body>
+
+    <div class="container">
+
+      <div class="page-header">
+          <a href="" class="avatar-container pull-left">
+            <div class="avatar ">
+              <div class="side"><img src="https://avatars.githubusercontent.com/u/2692416?v=4" class="img-responsive"/></div>
+            </div>
+          </a>
+        <h1><a href="">Principia Nugae</a> <small></small></h1>
+      </div>
+
+      <nav class="navbar navbar-default">
+
+        <!-- Hamburger menu for mobile -->
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#plumage-navbar-collapse-1" aria-expanded="false">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="" title="">Principia Nugae</a>
+        </div>
+
+        <!-- Menus and search forms -->
+        <div class="collapse navbar-collapse" id="plumage-navbar-collapse-1">
+
+          <ul class="nav navbar-nav">
+<li >
+                  <a href="/pages/about.html">About</a>
+                </li>
+<li  class="active" >
+                  <a href="/category/iiif.html">iiif <span class="sr-only">(current)</span></a>
+                </li>
+<li >
+                  <a href="/category/misc.html">misc</a>
+                </li>
+<li >
+                  <a href="/category/python.html">python</a>
+                </li>
+          </ul>
+
+
+
+        </div>
+
+      </nav>
+
+    </div>
+
+
+    <div class="container main">
+
+
+      <div class="row">
+        <div class=" col-md-9  ">
+  <h1>
+    <a href="/implementing-navplace.html" rel="bookmark" title="Permalink to Implementing navPlace: Desires and Possibilities for Consuming Applications">Implementing navPlace: Desires and Possibilities for Consuming Applications</a>
+  </h1>
+        </div>
+      </div>
+
+      <div class="row">
+
+
+        <div class=" col-md-9 " id="content" role="main">
+  
+
+  <div>
+    <p>For many years, the University of Tennessee Libraries has utilized <a class="reference external" href="https://www.geonames.org/">GeoNames</a> as a source
+for dereferencing and reconciling geographic location data related to our works. The GeoNames API allows consumers to retrieve
+many metadata elements about a place for free including &quot;point&quot; information in the form of latitude and longitude. The
+relative ease of adding geographic data has encouraged us to add this data to our MODS records at
+<code>/mods/subject[geographic]/cartographics/coordinates</code> near its corresponding string and reference to the source
+object in Geonames.</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><span class="nt">&lt;mods:subject</span> <span class="na">authority=</span><span class="s">&quot;geonames&quot;</span> <span class="na">valueURI=</span><span class="s">&quot;http://sws.geonames.org/4624443&quot;</span><span class="nt">&gt;</span>
+   <span class="nt">&lt;mods:geographic&gt;</span>Gatlinburg<span class="nt">&lt;/mods:geographic&gt;</span>
+   <span class="nt">&lt;mods:cartographics&gt;</span>
+<span class="hll">      <span class="nt">&lt;mods:coordinates&gt;</span>35.71453, -83.51189<span class="nt">&lt;/mods:coordinates&gt;</span>
+</span>   <span class="nt">&lt;/mods:cartographics&gt;</span>
+<span class="nt">&lt;/mods:subject&gt;</span>
+</pre></div></td></tr></table></div>
+<p>While we historically mapped this data, we never actually leveraged it and used it for display or navigation.
+Recently, the <a class="reference external" href="https://github.com/CenterForDigitalHumanities/">Center for Digital Humanities at Saint Louis University</a>
+released a new <a class="reference external" href="https://centerfordigitalhumanities.github.io/navplace-viewer/">Beta viewer</a> that leverages
+<code>navPlace</code> properties in IIIF manifests and displays them on a map. Depending on where the data is found within the
+manifest depends on how it functions in the viewer. Since we already had this data easily available, I decided to add
+code to add <code>navPlace</code> properties to our manifests via our <a class="reference external" href="https://github.com/utkdigitalinitiatives/iiif_assemble">IIIF Presentation v3 service</a>.</p>
+<p>The <a class="reference external" href="https://iiif.io/api/presentation/3.0/">IIIF Presentation Specification</a> does not provide a resource property
+designed specifically for geographic location. Because of this, the <a class="reference external" href="https://iiif.io/api/extension/navplace/">navPlace extension</a>
+exists. The <code>navPlace</code> <a class="reference external" href="https://iiif.io/api/extension/navplace/">extension</a> is not very prescriptive. The
+property is allowed in most classes defined by the <a class="reference external" href="https://iiif.io/api/presentation/3.0/">IIIF presentation v3 specification</a>.
+According to the extension, a <code>navPlace</code> property is allowed on a IIIF <code>Collection</code>, <code>Manifest</code>,
+<code>Range</code>, and / or <code>Canvas</code>.</p>
+<p>Rather than adding the property everywhere, I decided to start small by adding the properties only to <code>Manifests</code>
+and <code>Ranges</code>. While one may argue that it makes most sense to add this information to the <code>Collection</code>, I
+would argue that the behavior of <a class="reference external" href="https://centerfordigitalhumanities.github.io/navplace-viewer/">navPlace viewer</a>
+makes this unnecessary. That's because the viewer attempts to dereference all <code>id</code> properties in search of other
+<code>navPlace</code> properties that may appear in embedded classes. Because of this, a <code>Collection</code> that references a
+<code>Manifest</code> with an <code>navPlace</code> property will render those if the <code>Collection</code> is passed to the viewer.</p>
+<p>In the next few sections, I will describe our implementation, how the viewer consumes and makes use of them, and personal
+desires for future consuming applications.</p>
+<div class="section" id="navplace-on-manifests">
+<h2>navPlace on Manifests</h2>
+<p>For our manifests, if a work has a MODS record with one or more matches for the XPATH query
+<code>subject[&#64;authority=&quot;geonames&quot;]/cartographics/coordinates</code>, it will get a <code>navPlace</code> property on the
+<code>Manifest</code>. The <code>navPlace</code> property always has three properties: <code>id</code>, <code>type</code>, and <code>features</code>.
+The value of the <code>type</code> property is <code>FeatureCollection</code>. The <code>id</code> property is unique for the
+<code>FeatureCollection</code> and is equal to the base manifest <code>id</code> concatenated with the value <code>/feature-collection/1</code>.</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span>
+<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;navPlace&quot;</span><span class="p">:</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://digital.lib.utk.edu/notdereferenceable/assemble/manifest/rfta/8/feature-collection/1&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;FeatureCollection&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;features&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div></td></tr></table></div>
+<p>The <code>features</code> property is an array. In the array are <code>Feature</code> bodies for each matching value of
+<code>mods:subject[&#64;authority=&quot;geonames&quot;]/mods:cartographics/mods:coordinates</code>.  Each <code>Feature</code> has the following
+properties: <code>id</code>, <code>type</code>, <code>properties</code>, and <code>geometry</code>.</p>
+<p>The <code>type</code> property is always <code>Feature</code>.  To ensure uniqueness, each <code>Feature</code> <code>id</code> is equal to
+the <code>id</code> of the <code>id</code> of the Manifest concatenated with <code>/feature/1</code>. The <code>properties</code> property
+is described <a class="reference external" href="https://iiif.io/api/extension/navplace/#32-context-considerations-for-geojson-ld-properties">here</a>.
+For our implementation, the <code>label</code> property is the only thing used and it is equal to a concatenation of the Manifest
+label and the related geographic location from the corresponding <code>mods:subject[&#64;authority=&quot;geonames]/mods:geographic</code>.
+Finally, <code>geometry</code> will always be a <code>Point</code> with the cartographics in the <code>coordinates</code> property in
+the format of &quot;longitude, latitude&quot;. It's always <code>Point</code> because our data is always point data. For many of our
+geographic place names, it would be much better to have polygon data, but this information isn't freely available from
+GeoNames.</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span></pre></div></td><td class="code"><div><pre><span></span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;navPlace&quot;</span><span class="p">:</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://digital.lib.utk.edu/notdereferenceable/assemble/manifest/rfta/8/feature-collection/1&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;FeatureCollection&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;features&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">                </span><span class="p">{</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="s2">&quot;https://digital.lib.utk.edu/notdereferenceable/assemble/manifest/rfta/8/feature/1&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;Feature&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;properties&quot;</span><span class="p">:{</span><span class="w"></span>
+<span class="w">                       </span><span class="nt">&quot;label&quot;</span><span class="p">:{</span><span class="w"></span>
+<span class="w">                          </span><span class="nt">&quot;en&quot;</span><span class="p">:[</span><span class="w"></span>
+<span class="w">                             </span><span class="s2">&quot;Interview with Seemona -- Gatlinburg&quot;</span><span class="w"></span>
+<span class="w">                          </span><span class="p">]</span><span class="w"></span>
+<span class="w">                       </span><span class="p">}</span><span class="w"></span>
+<span class="w">                    </span><span class="p">},</span><span class="w"></span>
+<span class="w">                    </span><span class="nt">&quot;geometry&quot;</span><span class="p">:{</span><span class="w"></span>
+<span class="w">                       </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;Point&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">                       </span><span class="nt">&quot;coordinates&quot;</span><span class="p">:[</span><span class="w"></span>
+<span class="w">                          </span><span class="mf">-83.51189</span><span class="p">,</span><span class="w"></span>
+<span class="w">                          </span><span class="mf">35.71453</span><span class="w"></span>
+<span class="w">                       </span><span class="p">]</span><span class="w"></span>
+<span class="w">                    </span><span class="p">}</span><span class="w"></span>
+<span class="w">                </span><span class="p">}</span><span class="w"></span>
+<span class="w">            </span><span class="p">]</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div></td></tr></table></div>
+</div>
+<div class="section" id="navplace-on-a-range">
+<h2>navPlace on a Range</h2>
+<p>In our IIIF manifests, ranges are added when we have structural metadata that describes the aboutness or specific parts of
+an audio or video work. The range is based on pbcore data available in our MODS records. This is described in great detail
+<a class="reference external" href="https://utk-iiif-cookbook.readthedocs.io/en/latest/contents/video.html#iiif-manifest">in our cookbook</a>.</p>
+<p>If a manifest has ranges and has cartographic coordinates as described above, any Ranges that relate to geographic places
+are given a <code>navPlace</code> property similar to what appears on the manifest. The <code>navPlace</code> property is only added
+if there is a match between its label and a <code>subject[&#64;authority]/geographic</code>. The one difference is that the label
+will be the value of <code>subject[&#64;authority]/geographic</code> concatenated with &quot; discussed in &quot; and the title of the
+manifest.</p>
+<p>When the property is generated and added, it looks like this:</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span></pre></div></td><td class="code"><div><pre><span></span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Range&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https:\/\/digital.lib.utk.edu\/notdereferenceable\/assemble\/manifest\/rfta\/8\/range\/places_mentioned\/1&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;label&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;en&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">      </span><span class="s2">&quot;Chalet Village&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="p">]</span><span class="w"></span>
+<span class="w">  </span><span class="p">},</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;navPlace&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https:\/\/digital.lib.utk.edu\/notdereferenceable\/featurecollection\/ChaletVillage\/1&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;FeatureCollection&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;features&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">      </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https:\/\/digital.lib.utk.edu\/notdereferenceable\/feature\/ChaletVillage\/1&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Feature&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;label&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="nt">&quot;en&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">              </span><span class="s2">&quot;Chalet Village discussed in Interview with Seemona and Daniel Whaley, 2019-09-20&quot;</span><span class="w"></span>
+<span class="w">            </span><span class="p">]</span><span class="w"></span>
+<span class="w">          </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">},</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;geometry&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Point&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">          </span><span class="nt">&quot;coordinates&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">            </span><span class="mf">-83.5277175</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="mf">35.7232049</span><span class="w"></span>
+<span class="w">          </span><span class="p">]</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">      </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">]</span><span class="w"></span>
+<span class="w">  </span><span class="p">},</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;items&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Canvas&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">      </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https:\/\/digital.lib.utk.edu\/notdereferenceable\/assemble\/manifest\/rfta\/8\/canvas\/0#t=00:12:35,00:26:30&quot;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">  </span><span class="p">]</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div></td></tr></table></div>
+</div>
+<div class="section" id="rendering-navplace-data-in-navplace-viewer">
+<h2>Rendering navPlace Data in navPlace Viewer</h2>
+<p>The navPlace viewer provides different experiences for navPlace properties on the Manifest and the Range. When the
+property is placed on Manifest, the <code>label</code> of the Feature, the <code>summary</code>, and links to open the manifest
+in Universal Viewer and Mirador are associated with the marker associated with the geographic point. When a user clicks
+on the point, a bubble expands with this information prominent. According to the README, it should also render the
+thumbnail of the first canvas.</p>
+<img alt="Display of navPlace on Manifest" src="https://utk-iiif-cookbook.readthedocs.io/en/latest/_images/navPlace_manifest.png" />
+<p>Properties on a range are rendered differently. The <code>label</code> of the Feature is associated with the marker with a
+similar user experience. Unfortunately, links to the viewers aren't present.</p>
+<img alt="Display of navPlace on Range" src="https://utk-iiif-cookbook.readthedocs.io/en/latest/_images/navPlace_range.png" />
+<p>This makes sense. The range has an <code>items</code> property that includes a canvas that targets the primary canvas in the
+manifest with a temporal media fragment attached to the end. The URI for the part of the Canvas in the Range is not
+dereferenceable. In order for a viewer to make use of the range, it would need to convert the <code>id</code> to a
+<a class="reference external" href="https://iiif.io/api/content-state/1.0/">content state URI</a> and the viewer would need to dereference it. Unfortunately,
+navPlace viewer doesn't do this, and neither Univeral Viewer nor Mirador would dereference it currently if it did.</p>
+</div>
+<div class="section" id="desires-for-consuming-applications">
+<h2>Desires for Consuming Applications</h2>
+<p>While the delivery of <code>navPlace</code> data on manifests in navPlace viewer meets our needs, the delivery of the property
+on range leaves a lot to be desired. The temporal data associated with the canvas inside the range is used to provide
+navigation to specific points in an audio or video work in viewers such as Universal Viewer and our own RFTA canopy. For
+instance, in our <a class="reference external" href="https://rfta.lib.utk.edu">Rising from the Ashes oral history portal</a>, the range data is leveraged to
+provide users a way to navigate to specific interview questions or geographic locations discussed within an oral history
+work. When a user clicks a temporal based part, it causes the viewer to update to that specific point.</p>
+<img alt="Geographic Navigation in Becky Jackson Interview" src="images/becky_jackson_places.png" />
+<p>In my opinion, this navigation experience would be better if it were a map with navigable points rather than the list
+you see above. Furthermore, this could be enhanced even further by allowing the map to represent an entire collection of
+manifests and rendering the navPlace properties on each. Then, users could start at the map and navigate to specific points
+in works without starting at the work.</p>
+<p>In order for this to happen, this will require two things. First, the map viewer or initial consuming application must
+translate the range to a IIIF content state URI. <a class="reference external" href="https://iiif.io/api/content-state/1.0/">Content state</a> provides a
+way to refer to a IIIF Presentation API resource, or a part of a resource, in a compact format that can be used to
+initialize the view of that resource in any client. The <code>id</code> associated with the range is not intended to be passed
+to a viewer in the same form that its found in the manifest. Instead, it must be transformed into a content state URI. To
+do this, the viewer needs to take the range and convert it to an annotation body like this:</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span></pre></div></td><td class="code"><div><pre><span></span><span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;@context&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://iiif.io/api/presentation/3/context.json&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://digital.lib.utk.edu/assemble/content-states/1&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Annotation&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;motivation&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;contentState&quot;</span><span class="p">],</span><span class="w"></span>
+<span class="w">  </span><span class="nt">&quot;target&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://digital.lib.utk.edu/notderferenceable/assemble/manifest/rfta/8/range/places_mentioned/1&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Range&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="nt">&quot;partOf&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"></span>
+<span class="w">      </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://digital.lib.utk.edu/assemble/manifest/rfta/8&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Manifest&quot;</span><span class="w"></span>
+<span class="w">      </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">]</span><span class="w"></span>
+<span class="w">  </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div></td></tr></table></div>
+<p>Then, this JSON needs to be encoded according to the <a class="reference external" href="https://iiif.io/api/content-state/0.9/#6-content-state-encoding">IIIF Content State Specification</a>
+to ensure it is not vulnerable to corruption. The specification defines a two step process for doing this that uses both
+the encodeURIComponent function available in web browsers, followed by Base 64 Encoding with URL and Filename Safe
+Alphabet (“base64url”) encoding, with padding characters removed. The initial encodeURIComponent step allows any UTF-16
+string in JavaScript to then be safely encoded to base64url in a web browser. The final step of removing padding removes
+the “=” character which might be subject to further percent-encoding as part of a URL.</p>
+<p>With Python, the JSON body above can be encoded into a content state URL like so:</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span></pre></div></td><td class="code"><div><pre><span></span><span class="kn">import</span> <span class="nn">base64</span>
+<span class="kn">from</span> <span class="nn">urllib</span> <span class="kn">import</span> <span class="n">parse</span>
+<span class="kn">import</span> <span class="nn">json</span>
+
+<span class="k">def</span> <span class="nf">encode_content_state</span><span class="p">(</span><span class="n">plain_content_state</span><span class="p">):</span>
+    <span class="n">uri_encoded</span> <span class="o">=</span> <span class="n">parse</span><span class="o">.</span><span class="n">quote</span><span class="p">(</span><span class="n">plain_content_state</span><span class="p">,</span> <span class="n">safe</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>  <span class="c1"># equivalent of encodeURIComponent</span>
+    <span class="n">utf8_encoded</span> <span class="o">=</span> <span class="n">uri_encoded</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;UTF-8&quot;</span><span class="p">)</span>
+    <span class="n">base64url</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">urlsafe_b64encode</span><span class="p">(</span><span class="n">utf8_encoded</span><span class="p">)</span>
+    <span class="n">utf8_decoded</span> <span class="o">=</span> <span class="n">base64url</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;UTF-8&quot;</span><span class="p">)</span>
+    <span class="n">base64url_no_padding</span> <span class="o">=</span> <span class="n">utf8_decoded</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;=&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">base64url_no_padding</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">my_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;sample_range.json&#39;</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">my_file</span><span class="p">)</span>
+    <span class="n">encode_content_state</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+</pre></div></td></tr></table></div>
+<p>This will return an encoded string that can decoded by a viewer that supports the specification.  An anchor can be built
+that passes this string following content state convention:</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span></pre></div></td><td class="code"><div><pre><span></span><span class="p">&lt;</span><span class="nt">a</span> <span class="na">href</span><span class="o">=</span><span class="s">&quot;https://link_to_viewer?iiif_content=JTdCJTIyJTQwY29udGV4dCUyMiUzQSUyMCUyMmh0dHAlM0ElMkYlMkZpaWlmLmlvJTJGYXBpJTJGcHJlc2VudGF0aW9uJTJGMyUyRmNvbnRleHQuanNvbiUyMiUyQyUyMCUyMmlkJTIyJTNBJTIwJTIyaHR0cHMlM0ElMkYlMkZkaWdpdGFsLmxpYi51dGsuZWR1JTJGYXNzZW1ibGUlMkZjb250ZW50LXN0YXRlcyUyRjElMjIlMkMlMjAlMjJ0eXBlJTIyJTNBJTIwJTIyQW5ub3RhdGlvbiUyMiUyQyUyMCUyMm1vdGl2YXRpb24lMjIlM0ElMjAlNUIlMjJjb250ZW50U3RhdGUlMjIlNUQlMkMlMjAlMjJ0YXJnZXQlMjIlM0ElMjAlN0IlMjJpZCUyMiUzQSUyMCUyMmh0dHBzJTNBJTJGJTJGZGlnaXRhbC5saWIudXRrLmVkdSUyRm5vdGRlcmZlcmVuY2VhYmxlJTJGYXNzZW1ibGUlMkZtYW5pZmVzdCUyRnJmdGElMkY4JTJGcmFuZ2UlMkZwbGFjZXNfbWVudGlvbmVkJTJGMSUyMiUyQyUyMCUyMnR5cGUlMjIlM0ElMjAlMjJSYW5nZSUyMiUyQyUyMCUyMnBhcnRPZiUyMiUzQSUyMCU1QiU3QiUyMmlkJTIyJTNBJTIwJTIyaHR0cHMlM0ElMkYlMkZkaWdpdGFsLmxpYi51dGsuZWR1JTJGYXNzZW1ibGUlMkZtYW5pZmVzdCUyRnJmdGElMkY4JTIyJTJDJTIwJTIydHlwZSUyMiUzQSUyMCUyMk1hbmlmZXN0JTIyJTdEJTVEJTdEJTdE&quot;</span><span class="p">&gt;</span>
+   Link to Viewer
+<span class="p">&lt;/</span><span class="nt">a</span><span class="p">&gt;</span>
+</pre></div></td></tr></table></div>
+</div>
+
+  </div>
+
+
+
+        </div>
+
+          <div class="col-md-3">
+  <div class="well">
+
+    <p><abbr title="2022-10-10T00:00:00-04:00"><i class="fa fa-calendar"></i> Mon 10 October 2022</abbr></p>
+
+      <p><address>
+        <i class="fa fa-user"></i> By
+          <a href="/author/mark-baggett.html" rel="author">Mark Baggett</a>
+      </address></p>
+
+    <hr/>
+
+      <p>
+              <a href="/category/iiif.html" rel="tag"
+                  data-toggle="tooltip" class="label label-info"
+                  title="2 articles in this category">iiif</a>
+            <a href="/tag/presentation-api.html" data-toggle="tooltip"
+      class="label label-default"
+      title="2 articles with this tag">presentation-api</a>
+            <a href="/tag/navplace.html" data-toggle="tooltip"
+      class="label label-default"
+      title="1 article with this tag">navplace</a>
+      </p>
+      <hr/>
+
+
+
+  </div>
+            
+          </div>
+
+      </div>
+
+    </div>
+
+    <!-- TODO: make footer sticky -->
+    <footer class="container-fluid">
+      <div class="container">
+        <div class="row">
+
+            <div class="col-md-2">
+                <h5>Social</h5>
+                <ul class="list-unstyled">
+                  <li>  <a href="https://github.com/markpbaggett">
+      <i class="fa fa-github"></i>
+    github
+  </a></li>
+                </ul>
+            </div>
+            <div class="col-md-2">
+            </div>
+
+          <div class="col-md-2">
+            <h5>Elsewhere:</h5>
+            <ul class="list-unstyled">
+              <li><a href="https://www.discogs.com/user/mbagget1/collection?sort=max&sort_order=desc">Discogs</a></li>
+            </ul>
+          </div>
+
+          <div class="col-md-2 text-muted">
+            <h5>Copyright notice</h5>
+            <p>© Copyright 2022 Mark Baggett.</p>
+          </div>
+
+          <div class="col-md-2 text-muted">
+            <h5>Disclaimer</h5>
+              <p>Views expressed here are my own, but you should adopt them immediately.</p>
+          </div>
+
+          <div class="col-md-2">
+          </div>
+
+        </div>
+      </div>
+
+      <h5 class="text-right"><a href="#"><i class="fa fa-arrow-up"></i> Back to top</a></h5>
+
+      <div class="container">
+      </div>
+
+    </footer>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/magnific-popup.js/1.1.0/jquery.magnific-popup.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fitvids/1.1.0/jquery.fitvids.min.js"></script>
+    <script src="/theme/js/jquery.mglass.js"></script>
+    <script src="/theme/js/application.js"></script>
+
+  </body>
+</html>
