@@ -6,7 +6,7 @@ Implementing navPlace: Desires and Possibilities for Consuming Applications
 :category: iiif
 :slug: implementing-navplace
 :authors: Mark Baggett
-:status: draft
+:status: published
 :summary: Describes our implementation of the navPlace extension in our IIIF manifests and desires for future consuming applications
 
 For many years, the University of Tennessee Libraries has utilized `GeoNames <https://www.geonames.org/>`_ as a source
@@ -179,11 +179,13 @@ on the point, a bubble expands with this information prominent. According to the
 thumbnail of the first canvas.
 
 .. image:: https://utk-iiif-cookbook.readthedocs.io/en/latest/_images/navPlace_manifest.png
+   :alt: Display of navPlace on Manifest
 
 Properties on a range are rendered differently. The :code:`label` of the Feature is associated with the marker with a
 similar user experience. Unfortunately, links to the viewers aren't present.
 
 .. image:: https://utk-iiif-cookbook.readthedocs.io/en/latest/_images/navPlace_range.png
+   :alt: Display of navPlace on Range
 
 This makes sense. The range has an :code:`items` property that includes a canvas that targets the primary canvas in the
 manifest with a temporal media fragment attached to the end. The URI for the part of the Canvas in the Range is not
@@ -191,5 +193,111 @@ dereferenceable. In order for a viewer to make use of the range, it would need t
 `content state URI <https://iiif.io/api/content-state/1.0/>`_ and the viewer would need to dereference it. Unfortunately,
 navPlace viewer doesn't do this, and neither Univeral Viewer nor Mirador would dereference it currently if it did.
 
-Desires from Consuming Applications
------------------------------------
+Content State and Desires for Consuming Applications
+----------------------------------------------------
+
+While the delivery of :code:`navPlace` data on manifests in navPlace viewer meets our needs, the delivery of the property
+on range leaves a lot to be desired. The temporal data associated with the canvas inside the range is used to provide
+navigation to specific points in an audio or video work in viewers such as Universal Viewer and our own RFTA canopy. For
+instance, in our `Rising from the Ashes oral history portal <https://rfta.lib.utk.edu>`_, the range data is leveraged to
+provide users a way to navigate to specific interview questions or geographic locations discussed within an oral history
+work. When a user clicks a temporal based part, it causes the viewer to update to that specific point.
+
+.. image:: images/becky_jackson_places.png
+   :alt: Geographic Navigation in Becky Jackson Interview
+
+In my opinion, this navigation experience would be better if it were a map with navigable points rather than the list
+you see above. Furthermore, this could be enhanced even further by allowing the map to represent an entire collection of
+manifests and rendering the navPlace properties on each. Then, users could start at the map and navigate to specific points
+in works without starting at the work.
+
+In order for this to happen, this will require two things. First, the map viewer or initial consuming application must
+translate the range to a IIIF content state URI. `Content state <https://iiif.io/api/content-state/1.0/>`_ provides a
+way to refer to a IIIF Presentation API resource, or a part of a resource, in a compact format that can be used to
+initialize the view of that resource in any client. The :code:`id` associated with the range is not intended to be passed
+to a viewer in the same form that its found in the manifest. Instead, it must be transformed into a content state URI. To
+do this, the viewer needs to take the range and convert it to an annotation body like this:
+
+.. code-block:: json
+
+   {
+     "@context": "http://iiif.io/api/presentation/3/context.json",
+     "id": "https://digital.lib.utk.edu/assemble/content-states/1",
+     "type": "Annotation",
+     "motivation": ["contentState"],
+     "target": {
+       "id": "https://digital.lib.utk.edu/notderferenceable/assemble/manifest/rfta/8/range/places_mentioned/1",
+       "type": "Range",
+       "partOf": [
+         {
+           "id": "https://digital.lib.utk.edu/assemble/manifest/rfta/8",
+           "type": "Manifest"
+         }
+       ]
+     }
+   }
+
+Then, this JSON needs to be encoded according to the `IIIF Content State Specification <https://iiif.io/api/content-state/0.9/#6-content-state-encoding>`_
+to ensure it is not vulnerable to corruption. The specification defines a two step process for doing this that uses both
+the encodeURIComponent function available in web browsers, followed by Base 64 Encoding with URL and Filename Safe
+Alphabet (“base64url”) encoding, with padding characters removed. The initial encodeURIComponent step allows any UTF-16
+string in JavaScript to then be safely encoded to base64url in a web browser. The final step of removing padding removes
+the “=” character which might be subject to further percent-encoding as part of a URL.
+
+With Python, the JSON body above can be encoded into a content state URL like so:
+
+.. code-block:: python
+
+   import base64
+   from urllib import parse
+   import json
+
+   def encode_content_state(plain_content_state):
+       uri_encoded = parse.quote(plain_content_state, safe='')  # equivalent of encodeURIComponent
+       utf8_encoded = uri_encoded.encode("UTF-8")
+       base64url = base64.urlsafe_b64encode(utf8_encoded)
+       utf8_decoded = base64url.decode("UTF-8")
+       base64url_no_padding = utf8_decoded.replace("=", "")
+       return base64url_no_padding
+
+   if __name__ == "__main__":
+       my_file = open('sample_range.json')
+       x = json.load(my_file)
+       encode_content_state(json.dumps(x))
+
+
+This will return an encoded string that can decoded by a viewer that supports the specification.  An anchor can be built
+that passes this string following content state convention:
+
+.. code-block:: html
+
+   <a href="https://link_to_viewer?iiif_content=JTdCJTIyJTQwY29udGV4dCUyMiUzQSUyMCUyMmh0dHAlM0ElMkYlMkZpaWlmLmlvJTJGYXBpJTJGcHJlc2VudGF0aW9uJTJGMyUyRmNvbnRleHQuanNvbiUyMiUyQyUyMCUyMmlkJTIyJTNBJTIwJTIyaHR0cHMlM0ElMkYlMkZkaWdpdGFsLmxpYi51dGsuZWR1JTJGYXNzZW1ibGUlMkZjb250ZW50LXN0YXRlcyUyRjElMjIlMkMlMjAlMjJ0eXBlJTIyJTNBJTIwJTIyQW5ub3RhdGlvbiUyMiUyQyUyMCUyMm1vdGl2YXRpb24lMjIlM0ElMjAlNUIlMjJjb250ZW50U3RhdGUlMjIlNUQlMkMlMjAlMjJ0YXJnZXQlMjIlM0ElMjAlN0IlMjJpZCUyMiUzQSUyMCUyMmh0dHBzJTNBJTJGJTJGZGlnaXRhbC5saWIudXRrLmVkdSUyRm5vdGRlcmZlcmVuY2VhYmxlJTJGYXNzZW1ibGUlMkZtYW5pZmVzdCUyRnJmdGElMkY4JTJGcmFuZ2UlMkZwbGFjZXNfbWVudGlvbmVkJTJGMSUyMiUyQyUyMCUyMnR5cGUlMjIlM0ElMjAlMjJSYW5nZSUyMiUyQyUyMCUyMnBhcnRPZiUyMiUzQSUyMCU1QiU3QiUyMmlkJTIyJTNBJTIwJTIyaHR0cHMlM0ElMkYlMkZkaWdpdGFsLmxpYi51dGsuZWR1JTJGYXNzZW1ibGUlMkZtYW5pZmVzdCUyRnJmdGElMkY4JTIyJTJDJTIwJTIydHlwZSUyMiUzQSUyMCUyMk1hbmlmZXN0JTIyJTdEJTVEJTdEJTdE">
+      Link to Viewer
+   </a>
+
+Then, the consuming application can decode this URI according to the specification like so:
+
+.. code-block:: python
+
+   import base64
+   from urllib import parse
+   import json
+
+   def decode_content_state(encoded_content_state):
+       padded_content_state = restore_padding(encoded_content_state)
+       base64url_decoded = base64.urlsafe_b64decode(padded_content_state)
+       utf8_decoded = base64url_decoded.decode("UTF-8")
+       uri_decoded = parse.unquote(utf8_decoded)
+       return uri_decoded
+
+
+   if __name__ == "__main__":
+      content_state = "JTdCJTIyJTQwY29udGV4dCUyMiUzQSUyMCUyMmh0dHAlM0ElMkYlMkZpaWlmLmlvJTJGYXBpJTJGcHJlc2VudGF0aW9uJTJGMyUyRmNvbnRleHQuanNvbiUyMiUyQyUyMCUyMmlkJTIyJTNBJTIwJTIyaHR0cHMlM0ElMkYlMkZkaWdpdGFsLmxpYi51dGsuZWR1JTJGYXNzZW1ibGUlMkZjb250ZW50LXN0YXRlcyUyRjElMjIlMkMlMjAlMjJ0eXBlJTIyJTNBJTIwJTIyQW5ub3RhdGlvbiUyMiUyQyUyMCUyMm1vdGl2YXRpb24lMjIlM0ElMjAlNUIlMjJjb250ZW50U3RhdGUlMjIlNUQlMkMlMjAlMjJ0YXJnZXQlMjIlM0ElMjAlN0IlMjJpZCUyMiUzQSUyMCUyMmh0dHBzJTNBJTJGJTJGZGlnaXRhbC5saWIudXRrLmVkdSUyRm5vdGRlcmZlcmVuY2VhYmxlJTJGYXNzZW1ibGUlMkZtYW5pZmVzdCUyRnJmdGElMkY4JTJGcmFuZ2UlMkZwbGFjZXNfbWVudGlvbmVkJTJGMSUyMiUyQyUyMCUyMnR5cGUlMjIlM0ElMjAlMjJSYW5nZSUyMiUyQyUyMCUyMnBhcnRPZiUyMiUzQSUyMCU1QiU3QiUyMmlkJTIyJTNBJTIwJTIyaHR0cHMlM0ElMkYlMkZkaWdpdGFsLmxpYi51dGsuZWR1JTJGYXNzZW1ibGUlMkZtYW5pZmVzdCUyRnJmdGElMkY4JTIyJTJDJTIwJTIydHlwZSUyMiUzQSUyMCUyMk1hbmlmZXN0JTIyJTdEJTVEJTdEJTdE"
+      decode_content_state(content_state)
+
+Assuming the viewer supports content state, the video can then start at the same temporal media fragment as in the Beck
+Jackson example above.
+
+While this may all seem like a big ask, I personally want to IIIF and its various APIs to power our future repositories.
+In order to make this happen, consuming applications must be able to recognize, encode, and decode content state. While
+we aren't there yet, I am hopeful we will see this support in the future.
