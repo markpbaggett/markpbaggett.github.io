@@ -334,8 +334,8 @@ dereferenceable. In order for a viewer to make use of the range, it would need t
 <a class="reference external" href="https://iiif.io/api/content-state/1.0/">content state URI</a> and the viewer would need to dereference it. Unfortunately,
 navPlace viewer doesn't do this, and neither Univeral Viewer nor Mirador would dereference it currently if it did.</p>
 </div>
-<div class="section" id="desires-for-consuming-applications">
-<h2>Desires for Consuming Applications</h2>
+<div class="section" id="content-state-and-desires-for-consuming-applications">
+<h2>Content State and Desires for Consuming Applications</h2>
 <p>While the delivery of <code>navPlace</code> data on manifests in navPlace viewer meets our needs, the delivery of the property
 on range leaves a lot to be desired. The temporal data associated with the canvas inside the range is used to provide
 navigation to specific points in an audio or video work in viewers such as Universal Viewer and our own RFTA canopy. For
@@ -432,6 +432,42 @@ that passes this string following content state convention:</p>
    Link to Viewer
 <span class="p">&lt;/</span><span class="nt">a</span><span class="p">&gt;</span>
 </pre></div></td></tr></table></div>
+<p>Then, the consuming application can decode this URI according to the specification like so:</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span></pre></div></td><td class="code"><div><pre><span></span><span class="kn">import</span> <span class="nn">base64</span>
+<span class="kn">from</span> <span class="nn">urllib</span> <span class="kn">import</span> <span class="n">parse</span>
+<span class="kn">import</span> <span class="nn">json</span>
+
+<span class="k">def</span> <span class="nf">decode_content_state</span><span class="p">(</span><span class="n">encoded_content_state</span><span class="p">):</span>
+    <span class="n">padded_content_state</span> <span class="o">=</span> <span class="n">restore_padding</span><span class="p">(</span><span class="n">encoded_content_state</span><span class="p">)</span>
+    <span class="n">base64url_decoded</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">urlsafe_b64decode</span><span class="p">(</span><span class="n">padded_content_state</span><span class="p">)</span>
+    <span class="n">utf8_decoded</span> <span class="o">=</span> <span class="n">base64url_decoded</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;UTF-8&quot;</span><span class="p">)</span>
+    <span class="n">uri_decoded</span> <span class="o">=</span> <span class="n">parse</span><span class="o">.</span><span class="n">unquote</span><span class="p">(</span><span class="n">utf8_decoded</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">uri_decoded</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+   <span class="n">content_state</span> <span class="o">=</span> <span class="s2">&quot;JTdCJTIyJTQwY29udGV4dCUyMiUzQSUyMCUyMmh0dHAlM0ElMkYlMkZpaWlmLmlvJTJGYXBpJTJGcHJlc2VudGF0aW9uJTJGMyUyRmNvbnRleHQuanNvbiUyMiUyQyUyMCUyMmlkJTIyJTNBJTIwJTIyaHR0cHMlM0ElMkYlMkZkaWdpdGFsLmxpYi51dGsuZWR1JTJGYXNzZW1ibGUlMkZjb250ZW50LXN0YXRlcyUyRjElMjIlMkMlMjAlMjJ0eXBlJTIyJTNBJTIwJTIyQW5ub3RhdGlvbiUyMiUyQyUyMCUyMm1vdGl2YXRpb24lMjIlM0ElMjAlNUIlMjJjb250ZW50U3RhdGUlMjIlNUQlMkMlMjAlMjJ0YXJnZXQlMjIlM0ElMjAlN0IlMjJpZCUyMiUzQSUyMCUyMmh0dHBzJTNBJTJGJTJGZGlnaXRhbC5saWIudXRrLmVkdSUyRm5vdGRlcmZlcmVuY2VhYmxlJTJGYXNzZW1ibGUlMkZtYW5pZmVzdCUyRnJmdGElMkY4JTJGcmFuZ2UlMkZwbGFjZXNfbWVudGlvbmVkJTJGMSUyMiUyQyUyMCUyMnR5cGUlMjIlM0ElMjAlMjJSYW5nZSUyMiUyQyUyMCUyMnBhcnRPZiUyMiUzQSUyMCU1QiU3QiUyMmlkJTIyJTNBJTIwJTIyaHR0cHMlM0ElMkYlMkZkaWdpdGFsLmxpYi51dGsuZWR1JTJGYXNzZW1ibGUlMkZtYW5pZmVzdCUyRnJmdGElMkY4JTIyJTJDJTIwJTIydHlwZSUyMiUzQSUyMCUyMk1hbmlmZXN0JTIyJTdEJTVEJTdEJTdE&quot;</span>
+   <span class="n">decode_content_state</span><span class="p">(</span><span class="n">content_state</span><span class="p">)</span>
+</pre></div></td></tr></table></div>
+<p>Assuming the viewer supports content state, the video can then start at the same temporal media fragment as in the Beck
+Jackson example above.</p>
+<p>While this may all seem like a big ask, I personally want to IIIF and its various APIs to power our future repositories.
+In order to make this happen, consuming applications must be able to recognize, encode, and decode content state. While
+we aren't there yet, I am hopeful we will see this support in the future.</p>
 </div>
 
   </div>
