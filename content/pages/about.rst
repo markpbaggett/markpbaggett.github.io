@@ -13,3 +13,5 @@ Online Elsewhere
 `Pinboard <https://pinboard.in/u:markpbaggett>`_
 
 `Hypothesis <https://hypothes.is/users/frozendirt>`_
+
+`Mastodon <https://digipres.club/@frozendirt>`_
