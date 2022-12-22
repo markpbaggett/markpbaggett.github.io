@@ -54,3 +54,5 @@ SITEMAP = {
         "pages": "monthly"
     }
 }
+
+GOOGLE_ANALYTICS = "G-L1RWHJC0V7"
