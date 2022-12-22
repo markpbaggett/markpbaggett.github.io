@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>Principia Nugae - python</title><link href="https://markpbaggett.github.io/" rel="alternate"></link><link href="https://markpbaggett.github.io/feeds/python.atom.xml" rel="self"></link><id>https://markpbaggett.github.io/</id><updated>2022-08-25T00:00:00-04:00</updated><entry><title>Using the Borg Pattern to Cache Content in a Serverless Application</title><link href="https://markpbaggett.github.io/libcal-borg-singleton.html" rel="alternate"></link><published>2022-08-25T00:00:00-04:00</published><updated>2022-08-25T00:00:00-04:00</updated><author><name>Mark Baggett</name></author><id>tag:markpbaggett.github.io,2022-08-25:/libcal-borg-singleton.html</id><summary type="html">&lt;p class="first last"&gt;Why familiarizing yourself with design paterns and programming idioms is important even to novice coders.&lt;/p&gt;
+</summary><content type="html">&lt;p&gt;As a librarian who occasionally writes code, my utilization of proven design patterns and programming idioms is mixed at
+best. The truth is almost all of my programming and development skills were acquired on my own through trial and error
+without the benefit of trainings, collaboration, or reading definitive literature such as
+&lt;a class="reference external" href="https://springframework.guru/gang-of-four-design-patterns/"&gt;Design Patterns: Elements of Reusable Object-Oriented Software&lt;/a&gt;.
+Because of this, my approach to common programming problems is often convoluted or at least not the proven approach.&lt;/p&gt;
+&lt;p&gt;That being said, I was recently reminded why familiarizing myself with design patterns was well worth it (even when
+I'm not consistently utilizing them). From time to time, late at night I will dive into a
+&lt;a class="reference external" href="https://medium.com/digirati-ch/progressive-enhancement-digital-objects-and-the-exploded-viewer-b0594d7bbb52"&gt;Medium article&lt;/a&gt;
+or &lt;a class="reference external" href="https://github.com/harvard-lil/warc-embed-netlify"&gt;Github repository&lt;/a&gt; to fill in gaps in my knowledge about things
+I'm curious about but not necessarily working on directly. Sometimes, that exploration may lead to deep dive in a
+repository like &lt;a class="reference external" href="https://github.com/faif/python-patterns"&gt;python-patterns&lt;/a&gt; where contributors have collaborated to
+explain how to implement common design patterns or programming idioms in Python. These deep dives may not be immediately
+applicable but the introductions and explanations may plant a seed for future utilization.&lt;/p&gt;
+&lt;p&gt;In July, one of these previously planted seeds fully bloomed and helped solve a precarious programming challenging (for
+me at least!). At UT Libraries, my department is responsible for maintaining the room booking system for students. Historically,
+we have relied on a legacy &lt;a class="reference external" href="https://sinatrarb.com/"&gt;Sinatra&lt;/a&gt; application called archimedes.  Archimededs was developed
+by a previous staff member who has been gone for nearly seven years.  Since he's been gone, we've worked to keep the
+application going, but haven't done much to modernize or redevelop it because of lack of time and resources. In the system,
+students reserve rooms via LibCal.  Each room has an attached RoomWizard from Steelcase. Archimedes sits in the middle
+and queries LibCal for reservations students make every few minutes.  Each RoomWizard then makes requests to Archimedes
+and is provided an XML response with its booking information formatted according to the &lt;a class="reference external" href="https://resources.steelcase.com/techsupport/TSUP/RoomWizard/Documentation/roomwizard_api.pdf"&gt;RoomWizard API&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;As legacy applications do, archimedes finally &amp;quot;broke&amp;quot; in late June of this year. Rather than spend a significant amount
+of time refactoring the existing application, I decided to use the opportunity to rethink the original approach and
+develop an application that I could more easily maintain. My primary goals were to:
+1. develop something in pure Python (the language I'm most comfortable in), 2. design it to be serverless (for portability),
+and 3. make sure the application did not need to interact with a database or any dynamic files on the file sytem (again
+for portability).&lt;/p&gt;
+&lt;p&gt;The results of my efforts can be seen in &lt;a class="reference external" href="https://github.com/markpbaggett/wizzard"&gt;wizzard&lt;/a&gt; (named for Bob Odenkirk's
+character on &lt;a class="reference external" href="https://www.youtube.com/watch?v=fFtRIDad_I8"&gt;Tom Goes to the Mayor&lt;/a&gt;). Like its predecessor, wizzard
+interfaces with the LibCal API and implements the RoomWizard connector API. The platform is built in
+&lt;a class="reference external" href="https://flask.palletsprojects.com/en/2.2.x/"&gt;flask&lt;/a&gt; rather than pure Python. The application itself is quite simple.
+There is a configuration file that defines LibCal authentication and how often API requests are made to LibCal. In order to be good stewards, we strive not to make unnecessary requests to LibCal.  Instead, the connector makes a
+request to LibCal once every 10 minutes.  The results are cached, and each RoomWizard queries the cached results every
+10 minutes.&lt;/p&gt;
+&lt;img alt="Bob Odenkirk as Wizzard from Tom Goes to the Mayor" src="images/wizzard.jpeg" style="width: 600px;" /&gt;
+&lt;div class="highlight"&gt;&lt;table class="highlighttable"&gt;&lt;tr&gt;&lt;td class="linenos"&gt;&lt;div class="linenodiv"&gt;&lt;pre&gt;&lt;span class="normal"&gt;1&lt;/span&gt;
+&lt;span class="normal"&gt;2&lt;/span&gt;
+&lt;span class="normal"&gt;3&lt;/span&gt;
+&lt;span class="normal"&gt;4&lt;/span&gt;
+&lt;span class="normal"&gt;5&lt;/span&gt;
+&lt;span class="normal"&gt;6&lt;/span&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/td&gt;&lt;td class="code"&gt;&lt;div&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="nt"&gt;&amp;lt;kwe:result&lt;/span&gt; &lt;span class="na"&gt;xmlns:kwe=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;http://www.appliancestudio.com/kwe/1.0/&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;
+  &lt;span class="nt"&gt;&amp;lt;kwe:date&amp;gt;&lt;/span&gt;20220824&lt;span class="nt"&gt;&amp;lt;/kwe:date&amp;gt;&lt;/span&gt;
+  &lt;span class="nt"&gt;&amp;lt;kwe:time&amp;gt;&lt;/span&gt;094101&lt;span class="nt"&gt;&amp;lt;/kwe:time&amp;gt;&lt;/span&gt;
+  &lt;span class="nt"&gt;&amp;lt;kwe:result_code&amp;gt;&lt;/span&gt;0&lt;span class="nt"&gt;&amp;lt;/kwe:result_code&amp;gt;&lt;/span&gt;
+  &lt;span class="nt"&gt;&amp;lt;rb:bookings&lt;/span&gt; &lt;span class="na"&gt;xmlns:rb=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;http://www.appliancestudio.com/rb/1.0/&amp;quot;&lt;/span&gt; &lt;span class="na"&gt;room_id=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;LIB_605&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;/&amp;gt;&lt;/span&gt;
+&lt;span class="nt"&gt;&amp;lt;/kwe:result&amp;gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/div&gt;
+&lt;p&gt;Without question, the most complex piece of the application is handling cache. Again, for the sake of portability, I
+strived to make sure there was no databases, datastores, or even the ability to write and read data from files on disks
+(platforms like Heroku have dynamic disks that make this task impossible). In order to handle scheduling requests, I
+planned from the beginning to use &lt;a class="reference external" href="https://apscheduler.readthedocs.io/en/3.x/"&gt;Advanced Python Scheduler (apscheduler)&lt;/a&gt;.
+With apscheduler, I planned to automate requests to the LibCal Booking API every 10 minutes and store that value in a
+global variable in the controller. On init, the application would query LibCal and then update the response every 600
+seconds.  If the application crashed or needed to be restarted, it would simply requery the API on startup.&lt;/p&gt;
+&lt;p&gt;While this strategy all made sense in my head, in retrospect it was naive and showed a glaring misunderstanding of
+decoration, closures, and scope.  The main reason for this is that while the initial LibCal request would be done on
+startup and initialization, all subsequent requests would be handled by a decorator related to the apscheduler task in
+the controller. In Python, decoration is a design pattern that allows you to modify the behavior of a function. A
+decorator is a function that takes in a function and returns an augmented copy of that function. With decorators, one
+must keep scope in mind. In Python, functions define scope. Closures have access to the scope of the function that
+returns them; the decorator’s scope. In other words, a decorator accepts a function and returns a closure. The closure
+itself does not have access to global variables and cannot have a side affect that reassigns the global variable.&lt;/p&gt;
+&lt;p&gt;As I realized this problem, my mind immediately went back to reading about the Borg pattern in Python.  Also known as
+the Monostate pattern, a Borg is a way to implement singleton behavior, but instead of having only one instance
+of a class, there are multiple instances that share the same state. In other words, the focus is on sharing state
+instead of sharing instance identity. By defining and using a Borg to handle cache, I could create an instance of the
+Borg when the application starts up.  Then, I could create new instances of the Borg in the closure of the decorator
+when new data is fetched. The new instance would be stored in memory just momentarily until the closure inside the
+decorator was returned, but because it's a Borg the state  of the original would be updated.  In other words, I'd never
+have more than two variables stored in memory, and one of those would only be there for a fraction of a second every 10
+minutes or so.&lt;/p&gt;
+&lt;p&gt;The Borg itself looks magical, but conceptually it's quite simple. In Python, instance attributes are stored in a
+attribute dictionary called __dict__. Usually, each instance will have its own dictionary, but the Borg pattern modifies
+this so that all instances have the same dictionary. In the module I created to handle cache, the &lt;code&gt;__shared_state&lt;/code&gt;
+attribute is a dictionary that is shared between all instances of my Borg. This is ensured by assigning
+&lt;code&gt;__shared_state&lt;/code&gt; to the &lt;code&gt;__dict__&lt;/code&gt; variable when initializing new instances. Normally, other attributes
+would be added to the instance's attribute dictionary, but, since the attribute dictionary itself is shared (again in
+&lt;code&gt;__shared_state&lt;/code&gt;), all other attributes are also shared.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;table class="highlighttable"&gt;&lt;tr&gt;&lt;td class="linenos"&gt;&lt;div class="linenodiv"&gt;&lt;pre&gt;&lt;span class="normal"&gt; 1&lt;/span&gt;
+&lt;span class="normal"&gt; 2&lt;/span&gt;
+&lt;span class="normal"&gt; 3&lt;/span&gt;
+&lt;span class="normal"&gt; 4&lt;/span&gt;
+&lt;span class="normal"&gt; 5&lt;/span&gt;
+&lt;span class="normal"&gt; 6&lt;/span&gt;
+&lt;span class="normal"&gt; 7&lt;/span&gt;
+&lt;span class="normal"&gt; 8&lt;/span&gt;
+&lt;span class="normal"&gt; 9&lt;/span&gt;
+&lt;span class="normal"&gt;10&lt;/span&gt;
+&lt;span class="normal"&gt;11&lt;/span&gt;
+&lt;span class="normal"&gt;12&lt;/span&gt;
+&lt;span class="normal"&gt;13&lt;/span&gt;
+&lt;span class="normal"&gt;14&lt;/span&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/td&gt;&lt;td class="code"&gt;&lt;div&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;typing&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;Dict&lt;/span&gt;
+
+
+&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;LibCalBorg&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="n"&gt;_shared_state&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;Dict&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="nb"&gt;str&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nb"&gt;str&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{}&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="fm"&gt;__init__&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="vm"&gt;__dict__&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;_shared_state&lt;/span&gt;
+
+
+&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;LibCalCache&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;LibCalBorg&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="fm"&gt;__init__&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;current&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="nb"&gt;super&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="fm"&gt;__init__&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;current&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;current&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/div&gt;
+&lt;p&gt;Integrating the Borg into my other code is quite easy. On startup, a new instance of the Borg is created that stores API
+cache from LibCal in a variable called &lt;code&gt;all_current_bookings&lt;/code&gt;.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;table class="highlighttable"&gt;&lt;tr&gt;&lt;td class="linenos"&gt;&lt;div class="linenodiv"&gt;&lt;pre&gt;&lt;span class="normal"&gt;1&lt;/span&gt;
+&lt;span class="normal"&gt;2&lt;/span&gt;
+&lt;span class="normal"&gt;3&lt;/span&gt;
+&lt;span class="normal"&gt;4&lt;/span&gt;
+&lt;span class="normal"&gt;5&lt;/span&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/td&gt;&lt;td class="code"&gt;&lt;div&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;libcal.libcal&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;RoomBookings&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;cache.libcal&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;LibCalCache&lt;/span&gt;
+
+&lt;span class="n"&gt;booking_data&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;RoomBookings&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;10024&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;arrow&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;utcnow&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;format&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;YYYYMMDD&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;get_bookings&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="n"&gt;all_current_bookings&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;LibCalCache&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;booking_data&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/div&gt;
+&lt;p&gt;Then, &lt;code&gt;apscheduler&lt;/code&gt; updates this every 600 seconds with an interval task. Technically, it defines a new variable
+but it updates the state of the initial instance each time a new one is created.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;table class="highlighttable"&gt;&lt;tr&gt;&lt;td class="linenos"&gt;&lt;div class="linenodiv"&gt;&lt;pre&gt;&lt;span class="normal"&gt;1&lt;/span&gt;
+&lt;span class="normal"&gt;2&lt;/span&gt;
+&lt;span class="normal"&gt;3&lt;/span&gt;
+&lt;span class="normal"&gt;4&lt;/span&gt;
+&lt;span class="normal"&gt;5&lt;/span&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/td&gt;&lt;td class="code"&gt;&lt;div&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="nd"&gt;@scheduler&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;task&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;interval&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nb"&gt;id&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;libcal&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;seconds&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;600&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;misfire_grace_time&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;900&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;job2&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+    &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;Updates the LibCal Cache that is passed to routes. Variable is a Borg Singleton that is garbage collected.&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+    &lt;span class="n"&gt;booking_data&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;RoomBookings&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;10024&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;arrow&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;utcnow&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;format&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;YYYYMMDD&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;get_bookings&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+    &lt;span class="n"&gt;all_current_bookings_two&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;LibCalCache&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;booking_data&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/div&gt;
+&lt;p&gt;Whenever the controller gets a request for an API response, that initial variable is always used.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;table class="highlighttable"&gt;&lt;tr&gt;&lt;td class="linenos"&gt;&lt;div class="linenodiv"&gt;&lt;pre&gt;&lt;span class="normal"&gt; 1&lt;/span&gt;
+&lt;span class="normal"&gt; 2&lt;/span&gt;
+&lt;span class="normal"&gt; 3&lt;/span&gt;
+&lt;span class="normal"&gt; 4&lt;/span&gt;
+&lt;span class="normal"&gt; 5&lt;/span&gt;
+&lt;span class="normal"&gt; 6&lt;/span&gt;
+&lt;span class="normal"&gt; 7&lt;/span&gt;
+&lt;span class="normal"&gt; 8&lt;/span&gt;
+&lt;span class="normal"&gt; 9&lt;/span&gt;
+&lt;span class="normal"&gt;10&lt;/span&gt;
+&lt;span class="normal"&gt;11&lt;/span&gt;
+&lt;span class="normal"&gt;12&lt;/span&gt;
+&lt;span class="normal"&gt;13&lt;/span&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/td&gt;&lt;td class="code"&gt;&lt;div&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="nd"&gt;@app&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;route&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;/rwconnector&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;rw_connector&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+    &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;Routes GET requests to /rwconnector.&lt;/span&gt;
+&lt;span class="sd"&gt;    This route handles all traffic to /rwconnector. The route passes all HTTP parameters to the GetResponse in&lt;/span&gt;
+&lt;span class="sd"&gt;    the commands package. Because of that, both about_connector and get_bookings routing is handled here.&lt;/span&gt;
+&lt;span class="sd"&gt;    Returns:&lt;/span&gt;
+&lt;span class="sd"&gt;        tuple: A tuple with the appropriate XML response from the related API at index 0, 200 at index 1, and a dict&lt;/span&gt;
+&lt;span class="sd"&gt;        specifying the content type of the response at index 2.&lt;/span&gt;
+&lt;span class="sd"&gt;    &amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+    &lt;span class="n"&gt;x&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;GetResponse&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;all_current_bookings&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;current&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                    &lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;name&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;os&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;getenv&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;name&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;version&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;os&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;getenv&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;version&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;short&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;os&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;getenv&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;short&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)}&lt;/span&gt;
+                    &lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;x&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;response&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;200&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;Content-Type&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;text/xml; charset=utf-8&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/div&gt;
+&lt;p&gt;While there are likely countless ways the concept here could be done better, the challenge presented here and my approach
+to solving it taught me a few things. First, it reiterated to me the importance of improving awareness of design patterns
+and programming idioms even if you aren't using them daily.  By doing so, when you have a precarious challenge, you at
+least are aware there are proven solutions. Second, you can only learn so much by reading and writing code alone. Often
+when I hear librarians discuss &amp;quot;how to learn to code,&amp;quot; they talk about tutorials, stack overflow, or carpentry. Occasionally,
+you may hear better advice such as &amp;quot;write something to automate a task for you.&amp;quot; The advice I normally give (and have
+often felt is best) is to read other people's code. By doing this you are introduced to new ways of doing things which
+can be critical when you are first starting out. But those things alone will only get you so far. Without awareness of
+the Borg pattern, I'm not sure my code of what it attempts to solve would ever be meaningful or understood by an individual
+who took my advice. This experience has convinced me that there is a definitive point where everyone who &amp;quot;codes&amp;quot; should familiarize themselves
+the popular design patterns and programming idioms in the language and frameworks they use, and that time for me is now.&lt;/p&gt;
+</content><category term="python"></category><category term="singletons"></category><category term="serverless"></category><category term="libcal"></category><category term="wizzard"></category></entry></feed>

@@ -1,0 +1,515 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>Principia Nugae - iiif</title><link href="https://markpbaggett.github.io/" rel="alternate"></link><link href="https://markpbaggett.github.io/feeds/iiif.atom.xml" rel="self"></link><id>https://markpbaggett.github.io/</id><updated>2022-10-10T00:00:00-04:00</updated><entry><title>Implementing navPlace: Desires and Possibilities for Consuming Applications</title><link href="https://markpbaggett.github.io/implementing-navplace.html" rel="alternate"></link><published>2022-10-10T00:00:00-04:00</published><updated>2022-10-10T00:00:00-04:00</updated><author><name>Mark Baggett</name></author><id>tag:markpbaggett.github.io,2022-10-10:/implementing-navplace.html</id><summary type="html">&lt;p class="first last"&gt;Describes our implementation of the navPlace extension in our IIIF manifests and desires for future consuming applications&lt;/p&gt;
+</summary><content type="html">&lt;p&gt;For many years, the University of Tennessee Libraries has utilized &lt;a class="reference external" href="https://www.geonames.org/"&gt;GeoNames&lt;/a&gt; as a source
+for dereferencing and reconciling geographic location data related to our works. The GeoNames API allows consumers to retrieve
+many metadata elements about a place for free including &amp;quot;point&amp;quot; information in the form of latitude and longitude. The
+relative ease of adding geographic data has encouraged us to add this data to our MODS records at
+&lt;code&gt;/mods/subject[geographic]/cartographics/coordinates&lt;/code&gt; near its corresponding string and reference to the source
+object in Geonames.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;table class="highlighttable"&gt;&lt;tr&gt;&lt;td class="linenos"&gt;&lt;div class="linenodiv"&gt;&lt;pre&gt;&lt;span class="normal"&gt;1&lt;/span&gt;
+&lt;span class="normal"&gt;2&lt;/span&gt;
+&lt;span class="normal"&gt;3&lt;/span&gt;
+&lt;span class="normal"&gt;4&lt;/span&gt;
+&lt;span class="normal"&gt;5&lt;/span&gt;
+&lt;span class="normal"&gt;6&lt;/span&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/td&gt;&lt;td class="code"&gt;&lt;div&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="nt"&gt;&amp;lt;mods:subject&lt;/span&gt; &lt;span class="na"&gt;authority=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;geonames&amp;quot;&lt;/span&gt; &lt;span class="na"&gt;valueURI=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;http://sws.geonames.org/4624443&amp;quot;&lt;/span&gt;&lt;span class="nt"&gt;&amp;gt;&lt;/span&gt;
+   &lt;span class="nt"&gt;&amp;lt;mods:geographic&amp;gt;&lt;/span&gt;Gatlinburg&lt;span class="nt"&gt;&amp;lt;/mods:geographic&amp;gt;&lt;/span&gt;
+   &lt;span class="nt"&gt;&amp;lt;mods:cartographics&amp;gt;&lt;/span&gt;
+&lt;span class="hll"&gt;      &lt;span class="nt"&gt;&amp;lt;mods:coordinates&amp;gt;&lt;/span&gt;35.71453, -83.51189&lt;span class="nt"&gt;&amp;lt;/mods:coordinates&amp;gt;&lt;/span&gt;
+&lt;/span&gt;   &lt;span class="nt"&gt;&amp;lt;/mods:cartographics&amp;gt;&lt;/span&gt;
+&lt;span class="nt"&gt;&amp;lt;/mods:subject&amp;gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/div&gt;
+&lt;p&gt;While we historically mapped this data, we never actually leveraged it and used it for display or navigation.
+Recently, the &lt;a class="reference external" href="https://github.com/CenterForDigitalHumanities/"&gt;Center for Digital Humanities at Saint Louis University&lt;/a&gt;
+released a new &lt;a class="reference external" href="https://centerfordigitalhumanities.github.io/navplace-viewer/"&gt;Beta viewer&lt;/a&gt; that leverages
+&lt;code&gt;navPlace&lt;/code&gt; properties in IIIF manifests and displays them on a map. Depending on where the data is found within the
+manifest depends on how it functions in the viewer. Since we already had this data easily available, I decided to add
+code to add &lt;code&gt;navPlace&lt;/code&gt; properties to our manifests via our &lt;a class="reference external" href="https://github.com/utkdigitalinitiatives/iiif_assemble"&gt;IIIF Presentation v3 service&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;The &lt;a class="reference external" href="https://iiif.io/api/presentation/3.0/"&gt;IIIF Presentation Specification&lt;/a&gt; does not provide a resource property
+designed specifically for geographic location. Because of this, the &lt;a class="reference external" href="https://iiif.io/api/extension/navplace/"&gt;navPlace extension&lt;/a&gt;
+exists. The &lt;code&gt;navPlace&lt;/code&gt; &lt;a class="reference external" href="https://iiif.io/api/extension/navplace/"&gt;extension&lt;/a&gt; is not very prescriptive. The
+property is allowed in most classes defined by the &lt;a class="reference external" href="https://iiif.io/api/presentation/3.0/"&gt;IIIF presentation v3 specification&lt;/a&gt;.
+According to the extension, a &lt;code&gt;navPlace&lt;/code&gt; property is allowed on a IIIF &lt;code&gt;Collection&lt;/code&gt;, &lt;code&gt;Manifest&lt;/code&gt;,
+&lt;code&gt;Range&lt;/code&gt;, and / or &lt;code&gt;Canvas&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Rather than adding the property everywhere, I decided to start small by adding the properties only to &lt;code&gt;Manifests&lt;/code&gt;
+and &lt;code&gt;Ranges&lt;/code&gt;. While one may argue that it makes most sense to add this information to the &lt;code&gt;Collection&lt;/code&gt;, I
+would argue that the behavior of &lt;a class="reference external" href="https://centerfordigitalhumanities.github.io/navplace-viewer/"&gt;navPlace viewer&lt;/a&gt;
+makes this unnecessary. That's because the viewer attempts to dereference all &lt;code&gt;id&lt;/code&gt; properties in search of other
+&lt;code&gt;navPlace&lt;/code&gt; properties that may appear in embedded classes. Because of this, a &lt;code&gt;Collection&lt;/code&gt; that references a
+&lt;code&gt;Manifest&lt;/code&gt; with an &lt;code&gt;navPlace&lt;/code&gt; property will render those if the &lt;code&gt;Collection&lt;/code&gt; is passed to the viewer.&lt;/p&gt;
+&lt;p&gt;In the next few sections, I will describe our implementation, how the viewer consumes and makes use of them, and personal
+desires for future consuming applications.&lt;/p&gt;
+&lt;div class="section" id="navplace-on-manifests"&gt;
+&lt;h2&gt;navPlace on Manifests&lt;/h2&gt;
+&lt;p&gt;For our manifests, if a work has a MODS record with one or more matches for the XPATH query
+&lt;code&gt;subject[&amp;#64;authority=&amp;quot;geonames&amp;quot;]/cartographics/coordinates&lt;/code&gt;, it will get a &lt;code&gt;navPlace&lt;/code&gt; property on the
+&lt;code&gt;Manifest&lt;/code&gt;. The &lt;code&gt;navPlace&lt;/code&gt; property always has three properties: &lt;code&gt;id&lt;/code&gt;, &lt;code&gt;type&lt;/code&gt;, and &lt;code&gt;features&lt;/code&gt;.
+The value of the &lt;code&gt;type&lt;/code&gt; property is &lt;code&gt;FeatureCollection&lt;/code&gt;. The &lt;code&gt;id&lt;/code&gt; property is unique for the
+&lt;code&gt;FeatureCollection&lt;/code&gt; and is equal to the base manifest &lt;code&gt;id&lt;/code&gt; concatenated with the value &lt;code&gt;/feature-collection/1&lt;/code&gt;.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;table class="highlighttable"&gt;&lt;tr&gt;&lt;td class="linenos"&gt;&lt;div class="linenodiv"&gt;&lt;pre&gt;&lt;span class="normal"&gt;1&lt;/span&gt;
+&lt;span class="normal"&gt;2&lt;/span&gt;
+&lt;span class="normal"&gt;3&lt;/span&gt;
+&lt;span class="normal"&gt;4&lt;/span&gt;
+&lt;span class="normal"&gt;5&lt;/span&gt;
+&lt;span class="normal"&gt;6&lt;/span&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/td&gt;&lt;td class="code"&gt;&lt;div&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;navPlace&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;        &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;id&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;https://digital.lib.utk.edu/notdereferenceable/assemble/manifest/rfta/8/feature-collection/1&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;        &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;type&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;FeatureCollection&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;        &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;features&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;[]&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/div&gt;
+&lt;p&gt;The &lt;code&gt;features&lt;/code&gt; property is an array. In the array are &lt;code&gt;Feature&lt;/code&gt; bodies for each matching value of
+&lt;code&gt;mods:subject[&amp;#64;authority=&amp;quot;geonames&amp;quot;]/mods:cartographics/mods:coordinates&lt;/code&gt;.  Each &lt;code&gt;Feature&lt;/code&gt; has the following
+properties: &lt;code&gt;id&lt;/code&gt;, &lt;code&gt;type&lt;/code&gt;, &lt;code&gt;properties&lt;/code&gt;, and &lt;code&gt;geometry&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;The &lt;code&gt;type&lt;/code&gt; property is always &lt;code&gt;Feature&lt;/code&gt;.  To ensure uniqueness, each &lt;code&gt;Feature&lt;/code&gt; &lt;code&gt;id&lt;/code&gt; is equal to
+the &lt;code&gt;id&lt;/code&gt; of the &lt;code&gt;id&lt;/code&gt; of the Manifest concatenated with &lt;code&gt;/feature/1&lt;/code&gt;. The &lt;code&gt;properties&lt;/code&gt; property
+is described &lt;a class="reference external" href="https://iiif.io/api/extension/navplace/#32-context-considerations-for-geojson-ld-properties"&gt;here&lt;/a&gt;.
+For our implementation, the &lt;code&gt;label&lt;/code&gt; property is the only thing used and it is equal to a concatenation of the Manifest
+label and the related geographic location from the corresponding &lt;code&gt;mods:subject[&amp;#64;authority=&amp;quot;geonames]/mods:geographic&lt;/code&gt;.
+Finally, &lt;code&gt;geometry&lt;/code&gt; will always be a &lt;code&gt;Point&lt;/code&gt; with the cartographics in the &lt;code&gt;coordinates&lt;/code&gt; property in
+the format of &amp;quot;longitude, latitude&amp;quot;. It's always &lt;code&gt;Point&lt;/code&gt; because our data is always point data. For many of our
+geographic place names, it would be much better to have polygon data, but this information isn't freely available from
+GeoNames.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;table class="highlighttable"&gt;&lt;tr&gt;&lt;td class="linenos"&gt;&lt;div class="linenodiv"&gt;&lt;pre&gt;&lt;span class="normal"&gt; 1&lt;/span&gt;
+&lt;span class="normal"&gt; 2&lt;/span&gt;
+&lt;span class="normal"&gt; 3&lt;/span&gt;
+&lt;span class="normal"&gt; 4&lt;/span&gt;
+&lt;span class="normal"&gt; 5&lt;/span&gt;
+&lt;span class="normal"&gt; 6&lt;/span&gt;
+&lt;span class="normal"&gt; 7&lt;/span&gt;
+&lt;span class="normal"&gt; 8&lt;/span&gt;
+&lt;span class="normal"&gt; 9&lt;/span&gt;
+&lt;span class="normal"&gt;10&lt;/span&gt;
+&lt;span class="normal"&gt;11&lt;/span&gt;
+&lt;span class="normal"&gt;12&lt;/span&gt;
+&lt;span class="normal"&gt;13&lt;/span&gt;
+&lt;span class="normal"&gt;14&lt;/span&gt;
+&lt;span class="normal"&gt;15&lt;/span&gt;
+&lt;span class="normal"&gt;16&lt;/span&gt;
+&lt;span class="normal"&gt;17&lt;/span&gt;
+&lt;span class="normal"&gt;18&lt;/span&gt;
+&lt;span class="normal"&gt;19&lt;/span&gt;
+&lt;span class="normal"&gt;20&lt;/span&gt;
+&lt;span class="normal"&gt;21&lt;/span&gt;
+&lt;span class="normal"&gt;22&lt;/span&gt;
+&lt;span class="normal"&gt;23&lt;/span&gt;
+&lt;span class="normal"&gt;24&lt;/span&gt;
+&lt;span class="normal"&gt;25&lt;/span&gt;
+&lt;span class="normal"&gt;26&lt;/span&gt;
+&lt;span class="normal"&gt;27&lt;/span&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/td&gt;&lt;td class="code"&gt;&lt;div&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;navPlace&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;        &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;            &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;id&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;https://digital.lib.utk.edu/notdereferenceable/assemble/manifest/rfta/8/feature-collection/1&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;            &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;type&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;FeatureCollection&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;            &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;features&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;                &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;                    &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;id&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;https://digital.lib.utk.edu/notdereferenceable/assemble/manifest/rfta/8/feature/1&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;                    &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;type&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;Feature&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;                    &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;properties&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;                       &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;label&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;                          &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;en&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:[&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;                             &lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;Interview with Seemona -- Gatlinburg&amp;quot;&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;                          &lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;                       &lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;                    &lt;/span&gt;&lt;span class="p"&gt;},&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;                    &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;geometry&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;                       &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;type&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;Point&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;                       &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;coordinates&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:[&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;                          &lt;/span&gt;&lt;span class="mf"&gt;-83.51189&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;                          &lt;/span&gt;&lt;span class="mf"&gt;35.71453&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;                       &lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;                    &lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;                &lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;            &lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class="section" id="navplace-on-a-range"&gt;
+&lt;h2&gt;navPlace on a Range&lt;/h2&gt;
+&lt;p&gt;In our IIIF manifests, ranges are added when we have structural metadata that describes the aboutness or specific parts of
+an audio or video work. The range is based on pbcore data available in our MODS records. This is described in great detail
+&lt;a class="reference external" href="https://utk-iiif-cookbook.readthedocs.io/en/latest/contents/video.html#iiif-manifest"&gt;in our cookbook&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;If a manifest has ranges and has cartographic coordinates as described above, any Ranges that relate to geographic places
+are given a &lt;code&gt;navPlace&lt;/code&gt; property similar to what appears on the manifest. The &lt;code&gt;navPlace&lt;/code&gt; property is only added
+if there is a match between its label and a &lt;code&gt;subject[&amp;#64;authority]/geographic&lt;/code&gt;. The one difference is that the label
+will be the value of &lt;code&gt;subject[&amp;#64;authority]/geographic&lt;/code&gt; concatenated with &amp;quot; discussed in &amp;quot; and the title of the
+manifest.&lt;/p&gt;
+&lt;p&gt;When the property is generated and added, it looks like this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;table class="highlighttable"&gt;&lt;tr&gt;&lt;td class="linenos"&gt;&lt;div class="linenodiv"&gt;&lt;pre&gt;&lt;span class="normal"&gt; 1&lt;/span&gt;
+&lt;span class="normal"&gt; 2&lt;/span&gt;
+&lt;span class="normal"&gt; 3&lt;/span&gt;
+&lt;span class="normal"&gt; 4&lt;/span&gt;
+&lt;span class="normal"&gt; 5&lt;/span&gt;
+&lt;span class="normal"&gt; 6&lt;/span&gt;
+&lt;span class="normal"&gt; 7&lt;/span&gt;
+&lt;span class="normal"&gt; 8&lt;/span&gt;
+&lt;span class="normal"&gt; 9&lt;/span&gt;
+&lt;span class="normal"&gt;10&lt;/span&gt;
+&lt;span class="normal"&gt;11&lt;/span&gt;
+&lt;span class="normal"&gt;12&lt;/span&gt;
+&lt;span class="normal"&gt;13&lt;/span&gt;
+&lt;span class="normal"&gt;14&lt;/span&gt;
+&lt;span class="normal"&gt;15&lt;/span&gt;
+&lt;span class="normal"&gt;16&lt;/span&gt;
+&lt;span class="normal"&gt;17&lt;/span&gt;
+&lt;span class="normal"&gt;18&lt;/span&gt;
+&lt;span class="normal"&gt;19&lt;/span&gt;
+&lt;span class="normal"&gt;20&lt;/span&gt;
+&lt;span class="normal"&gt;21&lt;/span&gt;
+&lt;span class="normal"&gt;22&lt;/span&gt;
+&lt;span class="normal"&gt;23&lt;/span&gt;
+&lt;span class="normal"&gt;24&lt;/span&gt;
+&lt;span class="normal"&gt;25&lt;/span&gt;
+&lt;span class="normal"&gt;26&lt;/span&gt;
+&lt;span class="normal"&gt;27&lt;/span&gt;
+&lt;span class="normal"&gt;28&lt;/span&gt;
+&lt;span class="normal"&gt;29&lt;/span&gt;
+&lt;span class="normal"&gt;30&lt;/span&gt;
+&lt;span class="normal"&gt;31&lt;/span&gt;
+&lt;span class="normal"&gt;32&lt;/span&gt;
+&lt;span class="normal"&gt;33&lt;/span&gt;
+&lt;span class="normal"&gt;34&lt;/span&gt;
+&lt;span class="normal"&gt;35&lt;/span&gt;
+&lt;span class="normal"&gt;36&lt;/span&gt;
+&lt;span class="normal"&gt;37&lt;/span&gt;
+&lt;span class="normal"&gt;38&lt;/span&gt;
+&lt;span class="normal"&gt;39&lt;/span&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/td&gt;&lt;td class="code"&gt;&lt;div&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;type&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;Range&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;id&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;https:\/\/digital.lib.utk.edu\/notdereferenceable\/assemble\/manifest\/rfta\/8\/range\/places_mentioned\/1&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;label&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;en&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;      &lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;Chalet Village&amp;quot;&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="p"&gt;},&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;navPlace&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;id&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;https:\/\/digital.lib.utk.edu\/notdereferenceable\/featurecollection\/ChaletVillage\/1&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;type&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;FeatureCollection&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;features&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;      &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;        &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;id&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;https:\/\/digital.lib.utk.edu\/notdereferenceable\/feature\/ChaletVillage\/1&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;        &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;type&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;Feature&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;        &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;properties&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;          &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;label&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;            &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;en&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;              &lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;Chalet Village discussed in Interview with Seemona and Daniel Whaley, 2019-09-20&amp;quot;&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;            &lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;          &lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;        &lt;/span&gt;&lt;span class="p"&gt;},&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;        &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;geometry&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;          &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;type&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;Point&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;          &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;coordinates&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;            &lt;/span&gt;&lt;span class="mf"&gt;-83.5277175&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;            &lt;/span&gt;&lt;span class="mf"&gt;35.7232049&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;          &lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;        &lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;      &lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="p"&gt;},&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;items&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;      &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;type&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;Canvas&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;      &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;id&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;https:\/\/digital.lib.utk.edu\/notdereferenceable\/assemble\/manifest\/rfta\/8\/canvas\/0#t=00:12:35,00:26:30&amp;quot;&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/div&gt;
+&lt;/div&gt;
+&lt;div class="section" id="rendering-navplace-data-in-navplace-viewer"&gt;
+&lt;h2&gt;Rendering navPlace Data in navPlace Viewer&lt;/h2&gt;
+&lt;p&gt;The navPlace viewer provides different experiences for navPlace properties on the Manifest and the Range. When the
+property is placed on Manifest, the &lt;code&gt;label&lt;/code&gt; of the Feature, the &lt;code&gt;summary&lt;/code&gt;, and links to open the manifest
+in Universal Viewer and Mirador are associated with the marker associated with the geographic point. When a user clicks
+on the point, a bubble expands with this information prominent. According to the README, it should also render the
+thumbnail of the first canvas.&lt;/p&gt;
+&lt;img alt="Display of navPlace on Manifest" src="https://utk-iiif-cookbook.readthedocs.io/en/latest/_images/navPlace_manifest.png" /&gt;
+&lt;p&gt;Properties on a range are rendered differently. The &lt;code&gt;label&lt;/code&gt; of the Feature is associated with the marker with a
+similar user experience. Unfortunately, links to the viewers aren't present.&lt;/p&gt;
+&lt;img alt="Display of navPlace on Range" src="https://utk-iiif-cookbook.readthedocs.io/en/latest/_images/navPlace_range.png" /&gt;
+&lt;p&gt;This makes sense. The range has an &lt;code&gt;items&lt;/code&gt; property that includes a canvas that targets the primary canvas in the
+manifest with a temporal media fragment attached to the end. The URI for the part of the Canvas in the Range is not
+dereferenceable. In order for a viewer to make use of the range, it would need to convert the &lt;code&gt;id&lt;/code&gt; to a
+&lt;a class="reference external" href="https://iiif.io/api/content-state/1.0/"&gt;content state URI&lt;/a&gt; and the viewer would need to dereference it. Unfortunately,
+navPlace viewer doesn't do this, and neither Univeral Viewer nor Mirador would dereference it currently if it did.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class="section" id="content-state-and-desires-for-consuming-applications"&gt;
+&lt;h2&gt;Content State and Desires for Consuming Applications&lt;/h2&gt;
+&lt;p&gt;While the delivery of &lt;code&gt;navPlace&lt;/code&gt; data on manifests in navPlace viewer meets our needs, the delivery of the property
+on range leaves a lot to be desired. The temporal data associated with the canvas inside the range is used to provide
+navigation to specific points in an audio or video work in viewers such as Universal Viewer and our own RFTA canopy. For
+instance, in our &lt;a class="reference external" href="https://rfta.lib.utk.edu"&gt;Rising from the Ashes oral history portal&lt;/a&gt;, the range data is leveraged to
+provide users a way to navigate to specific interview questions or geographic locations discussed within an oral history
+work. When a user clicks a temporal based part, it causes the viewer to update to that specific point.&lt;/p&gt;
+&lt;img alt="Geographic Navigation in Becky Jackson Interview" src="images/becky_jackson_places.png" /&gt;
+&lt;p&gt;In my opinion, this navigation experience would be better if it were a map with navigable points rather than the list
+you see above. Furthermore, this could be enhanced even further by allowing the map to represent an entire collection of
+manifests and rendering the navPlace properties on each. Then, users could start at the map and navigate to specific points
+in works without starting at the work.&lt;/p&gt;
+&lt;p&gt;In order for this to happen, this will require two things. First, the map viewer or initial consuming application must
+translate the range to a IIIF content state URI. &lt;a class="reference external" href="https://iiif.io/api/content-state/1.0/"&gt;Content state&lt;/a&gt; provides a
+way to refer to a IIIF Presentation API resource, or a part of a resource, in a compact format that can be used to
+initialize the view of that resource in any client. The &lt;code&gt;id&lt;/code&gt; associated with the range is not intended to be passed
+to a viewer in the same form that its found in the manifest. Instead, it must be transformed into a content state URI. To
+do this, the viewer needs to take the range and convert it to an annotation body like this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;table class="highlighttable"&gt;&lt;tr&gt;&lt;td class="linenos"&gt;&lt;div class="linenodiv"&gt;&lt;pre&gt;&lt;span class="normal"&gt; 1&lt;/span&gt;
+&lt;span class="normal"&gt; 2&lt;/span&gt;
+&lt;span class="normal"&gt; 3&lt;/span&gt;
+&lt;span class="normal"&gt; 4&lt;/span&gt;
+&lt;span class="normal"&gt; 5&lt;/span&gt;
+&lt;span class="normal"&gt; 6&lt;/span&gt;
+&lt;span class="normal"&gt; 7&lt;/span&gt;
+&lt;span class="normal"&gt; 8&lt;/span&gt;
+&lt;span class="normal"&gt; 9&lt;/span&gt;
+&lt;span class="normal"&gt;10&lt;/span&gt;
+&lt;span class="normal"&gt;11&lt;/span&gt;
+&lt;span class="normal"&gt;12&lt;/span&gt;
+&lt;span class="normal"&gt;13&lt;/span&gt;
+&lt;span class="normal"&gt;14&lt;/span&gt;
+&lt;span class="normal"&gt;15&lt;/span&gt;
+&lt;span class="normal"&gt;16&lt;/span&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/td&gt;&lt;td class="code"&gt;&lt;div&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;@context&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;http://iiif.io/api/presentation/3/context.json&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;id&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;https://digital.lib.utk.edu/assemble/content-states/1&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;type&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;Annotation&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;motivation&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;contentState&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;],&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;target&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;id&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;https://digital.lib.utk.edu/notderferenceable/assemble/manifest/rfta/8/range/places_mentioned/1&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;type&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;Range&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;partOf&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;      &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;        &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;id&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;https://digital.lib.utk.edu/assemble/manifest/rfta/8&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;        &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;type&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;Manifest&amp;quot;&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;      &lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/div&gt;
+&lt;p&gt;Then, this JSON needs to be encoded according to the &lt;a class="reference external" href="https://iiif.io/api/content-state/0.9/#6-content-state-encoding"&gt;IIIF Content State Specification&lt;/a&gt;
+to ensure it is not vulnerable to corruption. The specification defines a two step process for doing this that uses both
+the encodeURIComponent function available in web browsers, followed by Base 64 Encoding with URL and Filename Safe
+Alphabet (“base64url”) encoding, with padding characters removed. The initial encodeURIComponent step allows any UTF-16
+string in JavaScript to then be safely encoded to base64url in a web browser. The final step of removing padding removes
+the “=” character which might be subject to further percent-encoding as part of a URL.&lt;/p&gt;
+&lt;p&gt;With Python, the JSON body above can be encoded into a content state URL like so:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;table class="highlighttable"&gt;&lt;tr&gt;&lt;td class="linenos"&gt;&lt;div class="linenodiv"&gt;&lt;pre&gt;&lt;span class="normal"&gt; 1&lt;/span&gt;
+&lt;span class="normal"&gt; 2&lt;/span&gt;
+&lt;span class="normal"&gt; 3&lt;/span&gt;
+&lt;span class="normal"&gt; 4&lt;/span&gt;
+&lt;span class="normal"&gt; 5&lt;/span&gt;
+&lt;span class="normal"&gt; 6&lt;/span&gt;
+&lt;span class="normal"&gt; 7&lt;/span&gt;
+&lt;span class="normal"&gt; 8&lt;/span&gt;
+&lt;span class="normal"&gt; 9&lt;/span&gt;
+&lt;span class="normal"&gt;10&lt;/span&gt;
+&lt;span class="normal"&gt;11&lt;/span&gt;
+&lt;span class="normal"&gt;12&lt;/span&gt;
+&lt;span class="normal"&gt;13&lt;/span&gt;
+&lt;span class="normal"&gt;14&lt;/span&gt;
+&lt;span class="normal"&gt;15&lt;/span&gt;
+&lt;span class="normal"&gt;16&lt;/span&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/td&gt;&lt;td class="code"&gt;&lt;div&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;base64&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;urllib&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;parse&lt;/span&gt;
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;json&lt;/span&gt;
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;encode_content_state&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;plain_content_state&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="n"&gt;uri_encoded&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;parse&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;quote&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;plain_content_state&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;safe&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;  &lt;span class="c1"&gt;# equivalent of encodeURIComponent&lt;/span&gt;
+    &lt;span class="n"&gt;utf8_encoded&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;uri_encoded&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;encode&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;UTF-8&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;base64url&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;base64&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;urlsafe_b64encode&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;utf8_encoded&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;utf8_decoded&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;base64url&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;decode&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;UTF-8&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;base64url_no_padding&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;utf8_decoded&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;replace&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;=&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;base64url_no_padding&lt;/span&gt;
+
+&lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="vm"&gt;__name__&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;__main__&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="n"&gt;my_file&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;open&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;sample_range.json&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;x&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;json&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;load&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;my_file&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;encode_content_state&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;json&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;dumps&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;x&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/div&gt;
+&lt;p&gt;This will return an encoded string that can decoded by a viewer that supports the specification.  An anchor can be built
+that passes this string following content state convention:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;table class="highlighttable"&gt;&lt;tr&gt;&lt;td class="linenos"&gt;&lt;div class="linenodiv"&gt;&lt;pre&gt;&lt;span class="normal"&gt;1&lt;/span&gt;
+&lt;span class="normal"&gt;2&lt;/span&gt;
+&lt;span class="normal"&gt;3&lt;/span&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/td&gt;&lt;td class="code"&gt;&lt;div&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="p"&gt;&amp;lt;&lt;/span&gt;&lt;span class="nt"&gt;a&lt;/span&gt; &lt;span class="na"&gt;href&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;https://link_to_viewer?iiif_content=JTdCJTIyJTQwY29udGV4dCUyMiUzQSUyMCUyMmh0dHAlM0ElMkYlMkZpaWlmLmlvJTJGYXBpJTJGcHJlc2VudGF0aW9uJTJGMyUyRmNvbnRleHQuanNvbiUyMiUyQyUyMCUyMmlkJTIyJTNBJTIwJTIyaHR0cHMlM0ElMkYlMkZkaWdpdGFsLmxpYi51dGsuZWR1JTJGYXNzZW1ibGUlMkZjb250ZW50LXN0YXRlcyUyRjElMjIlMkMlMjAlMjJ0eXBlJTIyJTNBJTIwJTIyQW5ub3RhdGlvbiUyMiUyQyUyMCUyMm1vdGl2YXRpb24lMjIlM0ElMjAlNUIlMjJjb250ZW50U3RhdGUlMjIlNUQlMkMlMjAlMjJ0YXJnZXQlMjIlM0ElMjAlN0IlMjJpZCUyMiUzQSUyMCUyMmh0dHBzJTNBJTJGJTJGZGlnaXRhbC5saWIudXRrLmVkdSUyRm5vdGRlcmZlcmVuY2VhYmxlJTJGYXNzZW1ibGUlMkZtYW5pZmVzdCUyRnJmdGElMkY4JTJGcmFuZ2UlMkZwbGFjZXNfbWVudGlvbmVkJTJGMSUyMiUyQyUyMCUyMnR5cGUlMjIlM0ElMjAlMjJSYW5nZSUyMiUyQyUyMCUyMnBhcnRPZiUyMiUzQSUyMCU1QiU3QiUyMmlkJTIyJTNBJTIwJTIyaHR0cHMlM0ElMkYlMkZkaWdpdGFsLmxpYi51dGsuZWR1JTJGYXNzZW1ibGUlMkZtYW5pZmVzdCUyRnJmdGElMkY4JTIyJTJDJTIwJTIydHlwZSUyMiUzQSUyMCUyMk1hbmlmZXN0JTIyJTdEJTVEJTdEJTdE&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;&amp;gt;&lt;/span&gt;
+   Link to Viewer
+&lt;span class="p"&gt;&amp;lt;/&lt;/span&gt;&lt;span class="nt"&gt;a&lt;/span&gt;&lt;span class="p"&gt;&amp;gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/div&gt;
+&lt;p&gt;Then, the consuming application can decode this URI according to the specification like so:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;table class="highlighttable"&gt;&lt;tr&gt;&lt;td class="linenos"&gt;&lt;div class="linenodiv"&gt;&lt;pre&gt;&lt;span class="normal"&gt; 1&lt;/span&gt;
+&lt;span class="normal"&gt; 2&lt;/span&gt;
+&lt;span class="normal"&gt; 3&lt;/span&gt;
+&lt;span class="normal"&gt; 4&lt;/span&gt;
+&lt;span class="normal"&gt; 5&lt;/span&gt;
+&lt;span class="normal"&gt; 6&lt;/span&gt;
+&lt;span class="normal"&gt; 7&lt;/span&gt;
+&lt;span class="normal"&gt; 8&lt;/span&gt;
+&lt;span class="normal"&gt; 9&lt;/span&gt;
+&lt;span class="normal"&gt;10&lt;/span&gt;
+&lt;span class="normal"&gt;11&lt;/span&gt;
+&lt;span class="normal"&gt;12&lt;/span&gt;
+&lt;span class="normal"&gt;13&lt;/span&gt;
+&lt;span class="normal"&gt;14&lt;/span&gt;
+&lt;span class="normal"&gt;15&lt;/span&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/td&gt;&lt;td class="code"&gt;&lt;div&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;base64&lt;/span&gt;
+&lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;urllib&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;parse&lt;/span&gt;
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;json&lt;/span&gt;
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;decode_content_state&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;encoded_content_state&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="n"&gt;padded_content_state&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;restore_padding&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;encoded_content_state&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;base64url_decoded&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;base64&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;urlsafe_b64decode&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;padded_content_state&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;utf8_decoded&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;base64url_decoded&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;decode&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;UTF-8&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;uri_decoded&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;parse&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;unquote&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;utf8_decoded&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;uri_decoded&lt;/span&gt;
+
+
+&lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="vm"&gt;__name__&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;__main__&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+   &lt;span class="n"&gt;content_state&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;JTdCJTIyJTQwY29udGV4dCUyMiUzQSUyMCUyMmh0dHAlM0ElMkYlMkZpaWlmLmlvJTJGYXBpJTJGcHJlc2VudGF0aW9uJTJGMyUyRmNvbnRleHQuanNvbiUyMiUyQyUyMCUyMmlkJTIyJTNBJTIwJTIyaHR0cHMlM0ElMkYlMkZkaWdpdGFsLmxpYi51dGsuZWR1JTJGYXNzZW1ibGUlMkZjb250ZW50LXN0YXRlcyUyRjElMjIlMkMlMjAlMjJ0eXBlJTIyJTNBJTIwJTIyQW5ub3RhdGlvbiUyMiUyQyUyMCUyMm1vdGl2YXRpb24lMjIlM0ElMjAlNUIlMjJjb250ZW50U3RhdGUlMjIlNUQlMkMlMjAlMjJ0YXJnZXQlMjIlM0ElMjAlN0IlMjJpZCUyMiUzQSUyMCUyMmh0dHBzJTNBJTJGJTJGZGlnaXRhbC5saWIudXRrLmVkdSUyRm5vdGRlcmZlcmVuY2VhYmxlJTJGYXNzZW1ibGUlMkZtYW5pZmVzdCUyRnJmdGElMkY4JTJGcmFuZ2UlMkZwbGFjZXNfbWVudGlvbmVkJTJGMSUyMiUyQyUyMCUyMnR5cGUlMjIlM0ElMjAlMjJSYW5nZSUyMiUyQyUyMCUyMnBhcnRPZiUyMiUzQSUyMCU1QiU3QiUyMmlkJTIyJTNBJTIwJTIyaHR0cHMlM0ElMkYlMkZkaWdpdGFsLmxpYi51dGsuZWR1JTJGYXNzZW1ibGUlMkZtYW5pZmVzdCUyRnJmdGElMkY4JTIyJTJDJTIwJTIydHlwZSUyMiUzQSUyMCUyMk1hbmlmZXN0JTIyJTdEJTVEJTdEJTdE&amp;quot;&lt;/span&gt;
+   &lt;span class="n"&gt;decode_content_state&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;content_state&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/div&gt;
+&lt;p&gt;Assuming the viewer supports content state, the video can then start at the same temporal media fragment as in the Beck
+Jackson example above.&lt;/p&gt;
+&lt;p&gt;While this may all seem like a big ask, I personally want to IIIF and its various APIs to power our future repositories.
+In order to make this happen, consuming applications must be able to recognize, encode, and decode content state. While
+we aren't there yet, I am hopeful we will see this support in the future.&lt;/p&gt;
+&lt;/div&gt;
+</content><category term="iiif"></category><category term="presentation-api"></category><category term="navplace"></category><category term="content-state-api"></category></entry><entry><title>Mistakes Were Made: Creating id Properties for Embedded Resources in IIIF Presentation v3</title><link href="https://markpbaggett.github.io/iiif-id-property.html" rel="alternate"></link><published>2022-09-13T00:00:00-04:00</published><updated>2022-09-13T00:00:00-04:00</updated><author><name>Mark Baggett</name></author><id>tag:markpbaggett.github.io,2022-09-13:/iiif-id-property.html</id><summary type="html">&lt;p class="first last"&gt;A closer look at the id property in IIIF Presentation, how we got it wrong, and the unintended consequences&lt;/p&gt;
+</summary><content type="html">&lt;p&gt;The &lt;code&gt;id&lt;/code&gt; property is without a doubt one of the most prevalent properties found throughout a IIIF manifest. As the API
+documentation states, &lt;a class="reference external" href="https://iiif.io/api/presentation/3.0/#5-resource-structure"&gt;all resource types&lt;/a&gt; &lt;code&gt;MUST&lt;/code&gt;
+have an &lt;code&gt;id&lt;/code&gt; property, and because of this the property is littered across the manifest. In our most basic work
+type, simple image, the &lt;code&gt;id&lt;/code&gt; property is used 13 times. The definition of the &lt;code&gt;id&lt;/code&gt; property is simply
+&lt;a class="reference external" href="https://iiif.io/api/presentation/3.0/#32-technical-properties"&gt;the URI that identifies the resource&lt;/a&gt;.
+At first glance, this seems relatively trivial but deeper inspection of the API docs demonstrates the need to understand
+the property with a little more care.&lt;/p&gt;
+&lt;p&gt;The API documentation specifies some important details about the use of the &lt;code&gt;id&lt;/code&gt; property within an embedded resource.
+An embedded resource refers to a resource where the entire JSON representation of a resource is found within another resource.
+According to the API docs, the value of &lt;code&gt;id&lt;/code&gt; for an embedded resource &lt;code&gt;MAY&lt;/code&gt; be the URI of the embedding resource
+with a unique fragment on the end, but only in the case that the embedded resource is not a &lt;code&gt;Canvas&lt;/code&gt;. The API
+documentation goes further to state explicitly that a &lt;code&gt;Canvas&lt;/code&gt; must have its own URI without a fragment.&lt;/p&gt;
+&lt;p&gt;It's important to understand what is meant by fragment. &lt;a class="reference external" href="https://iiif.io/api/presentation/3.0/#53-canvas"&gt;Section 5.3 of the IIIF Presentation API docs&lt;/a&gt;
+explains that the canvas must not contain a fragment (a &lt;code&gt;#&lt;/code&gt; followed by further characters), as this would make it
+impossible to refer to a segment of the Canvas’s area using the media fragment syntax of #xywh= for spatial regions,
+and/or #t= for temporal segments. It also states that canvases &lt;code&gt;MAY&lt;/code&gt; be able to be dereferenced separately from the
+Manifest via their URIs as well as being embedded.&lt;/p&gt;
+&lt;p&gt;A few years ago when we first implemented IIIF, this and other details regarding the &lt;code&gt;id&lt;/code&gt; property were things we
+missed or didn't fully understand. To create &lt;code&gt;id&lt;/code&gt; properties for canvases, we concatenated a pattern to the end of
+the value of the &lt;code&gt;id&lt;/code&gt; property of the manifest based on the order of the Canvas within the work.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;table class="highlighttable"&gt;&lt;tr&gt;&lt;td class="linenos"&gt;&lt;div class="linenodiv"&gt;&lt;pre&gt;&lt;span class="normal"&gt; 1&lt;/span&gt;
+&lt;span class="normal"&gt; 2&lt;/span&gt;
+&lt;span class="normal"&gt; 3&lt;/span&gt;
+&lt;span class="normal"&gt; 4&lt;/span&gt;
+&lt;span class="normal"&gt; 5&lt;/span&gt;
+&lt;span class="normal"&gt; 6&lt;/span&gt;
+&lt;span class="normal"&gt; 7&lt;/span&gt;
+&lt;span class="normal"&gt; 8&lt;/span&gt;
+&lt;span class="normal"&gt; 9&lt;/span&gt;
+&lt;span class="normal"&gt;10&lt;/span&gt;
+&lt;span class="normal"&gt;11&lt;/span&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/td&gt;&lt;td class="code"&gt;&lt;div&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="x"&gt;public function buildCanvas ($index, $uri, $pid) {&lt;/span&gt;
+
+&lt;span class="hll"&gt;&lt;span class="x"&gt;    $canvasId = $uri . &amp;#39;/canvas/&amp;#39; . $index;&lt;/span&gt;
+&lt;/span&gt;&lt;span class="x"&gt;    $title = $this-&amp;gt;xpath-&amp;gt;query(&amp;#39;titleInfo[not(@type=&amp;quot;alternative&amp;quot;)]&amp;#39;)[0];&lt;/span&gt;
+&lt;span class="x"&gt;    $canvas = (object) [&lt;/span&gt;
+&lt;span class="x"&gt;            &amp;quot;id&amp;quot; =&amp;gt; $canvasId,&lt;/span&gt;
+&lt;span class="x"&gt;            &amp;quot;type&amp;quot; =&amp;gt; &amp;#39;Canvas&amp;#39;,&lt;/span&gt;
+&lt;span class="x"&gt;            &amp;quot;label&amp;quot; =&amp;gt; self::getLanguageArray($title, &amp;#39;label&amp;#39;, &amp;#39;none&amp;#39;),&lt;/span&gt;
+&lt;span class="x"&gt;            &amp;quot;thumbnail&amp;quot; =&amp;gt; self::buildThumbnail(200, 200)&lt;/span&gt;
+&lt;span class="x"&gt;    ];&lt;/span&gt;
+&lt;span class="x"&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/div&gt;
+&lt;p&gt;This concatenation results in a URI like below within the &lt;code&gt;id&lt;/code&gt; property of a Canvas:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;table class="highlighttable"&gt;&lt;tr&gt;&lt;td class="linenos"&gt;&lt;div class="linenodiv"&gt;&lt;pre&gt;&lt;span class="normal"&gt;1&lt;/span&gt;
+&lt;span class="normal"&gt;2&lt;/span&gt;
+&lt;span class="normal"&gt;3&lt;/span&gt;
+&lt;span class="normal"&gt;4&lt;/span&gt;
+&lt;span class="normal"&gt;5&lt;/span&gt;
+&lt;span class="normal"&gt;6&lt;/span&gt;
+&lt;span class="normal"&gt;7&lt;/span&gt;
+&lt;span class="normal"&gt;8&lt;/span&gt;
+&lt;span class="normal"&gt;9&lt;/span&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/td&gt;&lt;td class="code"&gt;&lt;div&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;items&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;        &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="hll"&gt;&lt;span class="w"&gt;            &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;id&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;https://digital.lib.utk.edu/assemble/manifest/rftaart/74/canvas/0&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/span&gt;&lt;span class="w"&gt;            &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;type&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;Canvas&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;            &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;items&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;[]&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;        &lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/div&gt;
+&lt;p&gt;While we concatenated a pattern to the end of the manifest's &lt;code&gt;id&lt;/code&gt; property to represent the canvas, this is not a
+problem since the concatenated value does not contain a fragment (a &lt;code&gt;#&lt;/code&gt; followed by further characters. The issue
+instead relates to other rules regarding the &lt;code&gt;id&lt;/code&gt; property that we didn't fully understand. According to the docs,
+the value of the &lt;code&gt;id&lt;/code&gt; must be a string and a URI. The API documentation has these rules about &lt;code&gt;id&lt;/code&gt; property
+naming conventions:&lt;/p&gt;
+&lt;blockquote&gt;
+The value must be a string, and the value must be an HTTP(S) URI for resources defined in this specification. If the resource is retrievable via HTTP(S), then the URI must be the URI at which it is published.&lt;/blockquote&gt;
+&lt;p&gt;Additionally, the API docs include other important rules for producers and consumers regarding dereferencing URIs.&lt;/p&gt;
+&lt;blockquote&gt;
+The existence of an HTTP(S) URI in the id property does not mean that the URI will always be dereferencable. If the resource with the id property is embedded, it may also be dereferenceable. If the resource is referenced, it must be dereferenceable.&lt;/blockquote&gt;
+&lt;p&gt;As the docs state, a canvas &lt;code&gt;id&lt;/code&gt; &lt;code&gt;MAY&lt;/code&gt; be dereferenceable. It doesn't have to be, but it &lt;code&gt;MAY&lt;/code&gt;. The
+problem is that a request on the URI for our &lt;code&gt;id&lt;/code&gt; on the Canvas returns the entire manifest for the work the canvas
+is embedded within.&lt;/p&gt;
+&lt;p&gt;While this may seem harmless, it is not and can have unintended consequences. Recently, I decided to experiment with adding
+cartographic information found within our descriptive metadata to our IIIF manifests.  The catalyst for this was the
+creation of the &lt;a class="reference external" href="https://github.com/CenterForDigitalHumanities"&gt;Research Computing Group at Saint Louis University's&lt;/a&gt;
+&lt;a class="reference external" href="https://github.com/CenterForDigitalHumanities/navplace-viewer/"&gt;navPlace viewer&lt;/a&gt;. This viewer makes use of GeoJSON
+found within a IIIF manifest in a &lt;code&gt;navPlace&lt;/code&gt; property. The &lt;code&gt;navPlace&lt;/code&gt; property is available in an
+&lt;a class="reference external" href="https://iiif.io/api/extension/navplace/"&gt;extension&lt;/a&gt; to the IIIF Presentation API.  The extension describes the
+property as such:&lt;/p&gt;
+&lt;blockquote&gt;
+The navPlace property identifies a single or multiple geographic areas pertinent to a resource using a GeoJSON Feature Collection containing one or more Features. These areas should be bounded discrete areas of the map akin to extents. These areas do not imply any level of accuracy, temporality, or state of existence.&lt;/blockquote&gt;
+&lt;p&gt;The &lt;code&gt;navPlace&lt;/code&gt; property is allowed on IIIF collections, manifests, ranges, and canvases. The flexibility of the
+extension and property causes challenges for consuming applications as its not clear where to find the property. This is
+further complicated by the fact that the resources that contain embedded &lt;code&gt;navPlace&lt;/code&gt; properties may themsleves be embedded
+or referenced.  Because of that, &lt;a class="reference external" href="https://github.com/CenterForDigitalHumanities/navplace-viewer/"&gt;navPlace viewer&lt;/a&gt;
+assumes that it should attempt to dereference all &lt;code&gt;id&lt;/code&gt; properties of resources that &lt;code&gt;navPlace&lt;/code&gt; can be
+embedded in order to ensure all &lt;code&gt;navPlace&lt;/code&gt; properties are found.&lt;/p&gt;
+&lt;p&gt;Adding &lt;code&gt;navPlace&lt;/code&gt; to our manifests caused no problems, but trying to implement &lt;a class="reference external" href="https://github.com/CenterForDigitalHumanities/navplace-viewer/"&gt;navPlace viewer&lt;/a&gt;
+to make use of that content did. For the first time that we are aware of, a consuming application started to attempt to
+dereference our canvases embedded in our manifests. It does this because its not sure whether the canvas is referenced
+or embedded. For us, while we treat canvases as embedded resources, each of the &lt;code&gt;id&lt;/code&gt; properties found within a
+canvas is derefernceable. According to the API specification, this is okay.  The only problem is that it is not
+dereferenceable for the canvas but instead the manifest it is embedded within. This is also an issue with our ranges.
+This causes an endless loop for the viewer and makes it impossible to serve our manifests.&lt;/p&gt;
+&lt;p&gt;Since this discovery, we have fixed this dereferencing issue. Now, &lt;code&gt;id&lt;/code&gt; properties are only dereferenceable if they
+in fact represent the resource they are embedded within. Without &lt;a class="reference external" href="https://github.com/CenterForDigitalHumanities/navplace-viewer/"&gt;navPlace viewer&lt;/a&gt;,
+I'm unsure we would have ever realized we had a problem.&lt;/p&gt;
+&lt;p&gt;The viewer has raised other questions for me. 1. How should a
+consuming application know that a resource is embedded or referenced? If the &lt;code&gt;id&lt;/code&gt; is derferenceable, should it be
+assumed that it may contain additional properties not found within the current resource? 2. What do other viewers do? Do
+Mirador, Universal Viewer, Clover, or IIIF Media Viewer have methods that perform the same level of dereferncing? The
+IIIF Book contains a recipe entitled, &lt;a class="reference external" href="https://iiif.io/api/cookbook/recipe/0001-mvm-image/"&gt;Simplest Manifest - Image&lt;/a&gt;.
+The recipe contains the minimal number of properties to be able to show how to serve an image.  The recipe embeds all
+the resources to ensure that users can understand what must be included.  That being said, if you were building a
+presentation manifest producer, you could simplify the JSON here to just this as long the canvas is derefenceable:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;table class="highlighttable"&gt;&lt;tr&gt;&lt;td class="linenos"&gt;&lt;div class="linenodiv"&gt;&lt;pre&gt;&lt;span class="normal"&gt; 1&lt;/span&gt;
+&lt;span class="normal"&gt; 2&lt;/span&gt;
+&lt;span class="normal"&gt; 3&lt;/span&gt;
+&lt;span class="normal"&gt; 4&lt;/span&gt;
+&lt;span class="normal"&gt; 5&lt;/span&gt;
+&lt;span class="normal"&gt; 6&lt;/span&gt;
+&lt;span class="normal"&gt; 7&lt;/span&gt;
+&lt;span class="normal"&gt; 8&lt;/span&gt;
+&lt;span class="normal"&gt; 9&lt;/span&gt;
+&lt;span class="normal"&gt;10&lt;/span&gt;
+&lt;span class="normal"&gt;11&lt;/span&gt;
+&lt;span class="normal"&gt;12&lt;/span&gt;
+&lt;span class="normal"&gt;13&lt;/span&gt;
+&lt;span class="normal"&gt;14&lt;/span&gt;
+&lt;span class="normal"&gt;15&lt;/span&gt;
+&lt;span class="normal"&gt;16&lt;/span&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/td&gt;&lt;td class="code"&gt;&lt;div&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;@context&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;http://iiif.io/api/presentation/3/context.json&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;id&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;https://iiif.io/api/cookbook/recipe/0001-mvm-image/manifest.json&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;type&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;Manifest&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;label&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;en&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;      &lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;Image 1&amp;quot;&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="p"&gt;},&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;items&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;      &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;id&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;https://iiif.io/api/cookbook/recipe/0001-mvm-image/canvas/p1&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;      &lt;/span&gt;&lt;span class="nt"&gt;&amp;quot;type&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;Canvas&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/div&gt;
+&lt;p&gt;Finally, if these resources can all be referenced, 3. how long may it take a viewer like &lt;a class="reference external" href="https://github.com/CenterForDigitalHumanities/navplace-viewer/"&gt;navPlace viewer&lt;/a&gt;,
+to parse and render a Collection resource that references thousands of book like objects with many pages and table of contents
+objects that may be dereferencable, and 4. would it not be better to add a property for specifying whether a resource is
+embedded or referenced so that the consuming application doesn't have to attempt dereferencing all these resources?&lt;/p&gt;
+&lt;p&gt;These questions are things that I'm thinking about and discussing with others, but this experience has reminded me how
+important it is to read and understand a specification when implementing a new application.&lt;/p&gt;
+</content><category term="iiif"></category><category term="presentation-api"></category></entry></feed>
