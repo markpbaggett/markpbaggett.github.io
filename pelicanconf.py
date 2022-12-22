@@ -1,6 +1,6 @@
 AUTHOR = 'Mark Baggett'
 SITENAME = "Principia Nugae"
-SITEURL = ''
+SITEURL = 'https://markpbaggett.github.io'
 
 PATH = 'content'
 
