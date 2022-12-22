@@ -28,6 +28,7 @@ RELATIVE_URLS = True
 
 PLUGINS = (
     'social',
+    "pelican.plugins.sitemap",
 )
 
 # code blocks with line numbers
@@ -39,3 +40,17 @@ THEME = "themes/plumage"
 
 DISCLAIMER = "Views expressed here are my own, but you should adopt them immediately."
 SITE_THUMBNAIL = "https://avatars.githubusercontent.com/u/2692416?v=4"
+
+SITEMAP = {
+    "format": "xml",
+    "priorities": {
+        "articles": 0.5,
+        "indexes": 0.5,
+        "pages": 0.5
+    },
+    "changefreqs": {
+        "articles": "monthly",
+        "indexes": "daily",
+        "pages": "monthly"
+    }
+}
