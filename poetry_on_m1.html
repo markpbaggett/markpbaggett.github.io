@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title>  Archives
+    <title>  Addressing Self-Induced Poetry Environment Problems on my M! MacBook
  | Principia Nugae</title>
 
     <meta name="author" content="Mark Baggett"/>
@@ -71,8 +71,8 @@
 <li >
                   <a href="./category/misc.html">misc</a>
                 </li>
-<li >
-                  <a href="./category/python.html">python</a>
+<li  class="active" >
+                  <a href="./category/python.html">python <span class="sr-only">(current)</span></a>
                 </li>
           </ul>
 
@@ -89,9 +89,9 @@
 
 
       <div class="row">
-        <div class=" col-md-12  ">
+        <div class=" col-md-9  ">
   <h1>
-    <a href="./" rel="bookmark" title="Permalink to archives">Archives</a>
+    <a href="./poetry_on_m1.html" rel="bookmark" title="Permalink to Addressing Self-Induced Poetry Environment Problems on my M! MacBook">Addressing Self-Induced Poetry Environment Problems on my M! MacBook</a>
   </h1>
         </div>
       </div>
@@ -99,72 +99,80 @@
       <div class="row">
 
 
-        <div class=" col-md-12 " id="content" role="main">
+        <div class=" col-md-9 " id="content" role="main">
+  
 
+  <div>
+    <p>Since 2015 or 2016, I have used System 76 laptops exclusively with Ubuntu or Pop 0S. Recently, a
+change in university procurement policy required me to switch my university issued System 76 Oryx Pro to either a M1
+Macbook or Dell Laptop. Since, nearly everyone I know uses a Macbook, I thought I'd try giving development with OSX
+another shot.</p>
+<p>While I'm still figuring things out, the hardest transition for me so far personally has been porting over my Python
+development practice to this new hardware. Currently, I use <a class="reference external" href="https://python-poetry.org/">poetry</a> for dependency
+management and deployment with <a class="reference external" href="https://www.jetbrains.com/pycharm/">Pycharm</a> as an IDE.</p>
+<p>When I got the M1 Macbook, I did not realize how many of my core dependencies were compiled for x86 architecture and had
+no ARM equivalent. Therefore, I'd install an application with <cite>poetry install</cite> and get no errors until I ran the application.
+When I ran the application in the wrong architecture, it errored with a message telling me a depenedency installed had
+been compiled for x86 or ARM.</p>
+<p>It didn't take long until I discovered <a class="reference external" href="https://en.wikipedia.org/wiki/Rosetta_(software)">Rosetta</a> which allowed me to
+emulate x86 as necessary. After installing Rosetta, I cloned Terminal and specified the clone to open with Rosetta.
+Now, when I print architecture with <cite>arch</cite> in a terminal I get <cite>arm64</cite> when not using Rosetta and <cite>i386</cite> when I am. This
+little trick can be invaluable when things go wrong.</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span>arch
+<span class="sb">`</span>i386<span class="sb">`</span>
+</pre></div></td></tr></table></div>
+<div class="section" id="when-things-go-wrong">
+<h2>When Things Go Wrong</h2>
+<p>Occasionally, I will still encounter errors like above even when I'm in a terminal that is emulating x86 or ARM.  This
+often happens because of <cite>poetry</cite> and my inconsistent workflow. The <cite>poetry</cite> shell is always tied to whatever the architecture
+was when the application was installed. Therefore, if you do <cite>poetry install</cite> in a ARM terminal but later do <cite>poetry shell</cite>
+from a terminal with Rosetta, it will still use that original architecture like below.</p>
+<img alt="Image Showing What Happens When You Execute a Poetry Shell Installed in Another Architecture" src="images/poetry_shell.png" />
+</div>
 
-  <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
-      <div class="panel panel-default">
-        <div class="panel-heading" role="tab" id="heading2022">
-          <h4 class="panel-title">
-            <a role="button" data-toggle="collapse" data-parent="#accordion"
-                href="#collapse2022"
-                class="btn-block "
-                aria-expanded="true"
-                aria-controls="collapse2022">
-              2022
-            </a>
-          </h4>
-        </div>
-        <div id="collapse2022" class="panel-collapse collapse in"
-            role="tabpanel" aria-labelledby="heading2022">
-          <div class="panel-body">
-
-                  <dl class="dl-horizontal">
-
-                <dt><abbr class="published" title="2022-12-22T00:00:00-05:00">Dec. 22</abbr></dt>
-                <dd><a href="./poetry_on_m1.html">Addressing Self-Induced Poetry Environment Problems on my M! MacBook</a></dd>
-
-
-
-                    </dl>
-                  <dl class="dl-horizontal">
-
-                <dt><abbr class="published" title="2022-10-10T00:00:00-04:00">Oct. 10</abbr></dt>
-                <dd><a href="./implementing-navplace.html">Implementing navPlace: Desires and Possibilities for Consuming Applications</a></dd>
-
-
-
-                    </dl>
-                  <dl class="dl-horizontal">
-
-                <dt><abbr class="published" title="2022-09-13T00:00:00-04:00">Sep. 13</abbr></dt>
-                <dd><a href="./iiif-id-property.html">Mistakes Were Made: Creating id Properties for Embedded Resources in IIIF Presentation v3</a></dd>
-
-
-
-                    </dl>
-                  <dl class="dl-horizontal">
-
-                <dt><abbr class="published" title="2022-08-25T00:00:00-04:00">Aug. 25</abbr></dt>
-                <dd><a href="./libcal-borg-singleton.html">Using the Borg Pattern to Cache Content in a Serverless Application</a></dd>
-
-
-
-                    </dl>
-                  <dl class="dl-horizontal">
-
-                <dt><abbr class="published" title="2022-08-24T00:00:00-04:00">Aug. 24</abbr></dt>
-                <dd><a href="./hello-world.html">Hello World!</a></dd>
-
-                  </dl>
-
-          </div>
-        </div>
-      </div>
   </div>
 
+
+
         </div>
 
+          <div class="col-md-3">
+  <div class="well">
+
+    <p><abbr title="2022-12-22T00:00:00-05:00"><i class="fa fa-calendar"></i> Thu 22 December 2022</abbr></p>
+
+      <p><address>
+        <i class="fa fa-user"></i> By
+          <a href="./author/mark-baggett.html" rel="author">Mark Baggett</a>
+      </address></p>
+
+    <hr/>
+
+      <p>
+              <a href="./category/python.html" rel="tag"
+                  data-toggle="tooltip" class="label label-info"
+                  title="2 articles in this category">python</a>
+            <a href="/tag/poetry.html" data-toggle="tooltip"
+      class="label label-default"
+      title="1 article with this tag">poetry</a>
+            <a href="/tag/m1.html" data-toggle="tooltip"
+      class="label label-default"
+      title="1 article with this tag">m1</a>
+            <a href="/tag/osx.html" data-toggle="tooltip"
+      class="label label-default"
+      title="1 article with this tag">osx</a>
+            <a href="/tag/macbook.html" data-toggle="tooltip"
+      class="label label-default"
+      title="1 article with this tag">macbook</a>
+      </p>
+      <hr/>
+
+
+
+  </div>
+            
+          </div>
 
       </div>
 
