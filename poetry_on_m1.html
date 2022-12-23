@@ -129,6 +129,19 @@ often happens because of <cite>poetry</cite> and my inconsistent workflow. The <
 was when the application was installed. Therefore, if you do <cite>poetry install</cite> in a ARM terminal but later do <cite>poetry shell</cite>
 from a terminal with Rosetta, it will still use that original architecture like below.</p>
 <img alt="Image Showing What Happens When You Execute a Poetry Shell Installed in Another Architecture" src="images/poetry_shell.png" />
+<p>When this happens and poetry has been installed or initialized in the wrong environment, you need to remove the
+environment. To do this, start by getting the id for the environment with <cite>poetry env list</cite>. I'm not clear exactly how
+this works, but you can use the command whether the poetry environment is activated or not:</p>
+<img alt="Demoing the Output of Poetry Env List" src="images/poetry_shell2.png" />
+<p>You can get more information about the environment with <cite>poetry env info</cite>, but the command will not show the architecture.</p>
+<img alt="Demoing the Output of Poetry Env Info" src="images/poetry_shell2.png" />
+<p>When you're ready, you can remove the environment by specifying its identifier and then reinstall in the correct architecture.</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span></pre></div></td><td class="code"><div><pre><span></span>poetry env remove exodus-fY88g50b-py3.11
+poetry install
+</pre></div></td></tr></table></div>
+<p>While all of this may seem obvious, this problem has cost me countless hours as well as significant hair loss. Hopefully,
+taking the time to write this out will ensure this happens less frequently in the future.</p>
 </div>
 
   </div>
@@ -140,7 +153,7 @@ from a terminal with Rosetta, it will still use that original architecture like 
           <div class="col-md-3">
   <div class="well">
 
-    <p><abbr title="2022-12-22T00:00:00-05:00"><i class="fa fa-calendar"></i> Thu 22 December 2022</abbr></p>
+    <p><abbr title="2022-12-23T00:00:00-05:00"><i class="fa fa-calendar"></i> Fri 23 December 2022</abbr></p>
 
       <p><address>
         <i class="fa fa-user"></i> By
