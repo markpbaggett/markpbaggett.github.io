@@ -1,109 +1,81 @@
 <!DOCTYPE html>
+
 <html lang="en">
-  <head>
-    <meta charset="utf-8"/>
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <title>  Using the Borg Pattern to Cache Content in a Serverless Application
+<head>
+<meta charset="utf-8"/>
+<meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="GC6R-SxUqF6fYOSa_PtF-epaoitzWq535hkI7LoB13M" name="google-site-verification">
+<title>  Using the Borg Pattern to Cache Content in a Serverless Application
  | Principia Nugae</title>
-
-    <meta name="author" content="Mark Baggett"/>
-
-    <!-- Bootstrap -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css"/>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"/>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/magnific-popup.js/1.1.0/magnific-popup.min.css"/>
-    <link rel="stylesheet" href="./theme/css/jquery.mglass.css"/>
-    <link rel="stylesheet" href="./theme/css/pygment-solarized-dark.css"/>
-    <link rel="stylesheet" href="./theme/css/style.css"/>
-
-    <!-- Fonts -->
-    <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'/>
-    <link href='https://fonts.googleapis.com/css?family=Istok+Web' rel='stylesheet' type='text/css'/>
-    <link href='https://fonts.googleapis.com/css?family=Droid+Sans+Mono' rel='stylesheet' type='text/css'/>
-
-
-    <link rel="icon" href="./favicon.ico" type="image/x-icon">
-    <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon">
-
-    <!-- Feeds -->
-
-
-  </head>
-
-  <body>
-
-    <div class="container">
-
-      <div class="page-header">
-          <a href="." class="avatar-container pull-left">
-            <div class="avatar ">
-              <div class="side"><img src="https://avatars.githubusercontent.com/u/2692416?v=4" class="img-responsive"/></div>
-            </div>
-          </a>
-        <h1><a href=".">Principia Nugae</a> <small></small></h1>
-      </div>
-
-      <nav class="navbar navbar-default">
-
-        <!-- Hamburger menu for mobile -->
-        <div class="navbar-header">
-          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#plumage-navbar-collapse-1" aria-expanded="false">
-            <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>
-          <a class="navbar-brand" href="." title="">Principia Nugae</a>
-        </div>
-
-        <!-- Menus and search forms -->
-        <div class="collapse navbar-collapse" id="plumage-navbar-collapse-1">
-
-          <ul class="nav navbar-nav">
-<li >
-                  <a href="./pages/about.html">About</a>
-                </li>
-<li >
-                  <a href="./category/iiif.html">iiif</a>
-                </li>
-<li >
-                  <a href="./category/misc.html">misc</a>
-                </li>
-<li  class="active" >
-                  <a href="./category/python.html">python <span class="sr-only">(current)</span></a>
-                </li>
-          </ul>
-
-
-
-        </div>
-
-      </nav>
-
-    </div>
-
-
-    <div class="container main">
-
-
-      <div class="row">
-        <div class=" col-md-9  ">
-  <h1>
-    <a href="./libcal-borg-singleton.html" rel="bookmark" title="Permalink to Using the Borg Pattern to Cache Content in a Serverless Application">Using the Borg Pattern to Cache Content in a Serverless Application</a>
-  </h1>
-        </div>
-      </div>
-
-      <div class="row">
-
-
-        <div class=" col-md-9 " id="content" role="main">
-  
-
-  <div>
-    <p>As a librarian who occasionally writes code, my utilization of proven design patterns and programming idioms is mixed at
+<meta content="Mark Baggett" name="author">
+<!-- Bootstrap -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet"/>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet"/>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/magnific-popup.js/1.1.0/magnific-popup.min.css" rel="stylesheet"/>
+<link href="./theme/css/jquery.mglass.css" rel="stylesheet"/>
+<link href="./theme/css/pygment-solarized-dark.css" rel="stylesheet"/>
+<link href="./theme/css/style.css" rel="stylesheet"/>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet" type="text/css"/>
+<link href="https://fonts.googleapis.com/css?family=Istok+Web" rel="stylesheet" type="text/css"/>
+<link href="https://fonts.googleapis.com/css?family=Droid+Sans+Mono" rel="stylesheet" type="text/css"/>
+<link href="./favicon.ico" rel="icon" type="image/x-icon"/>
+<link href="./favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<!-- Feeds -->
+</meta></meta><link href="https://markpbaggett.github.io/libcal-borg-singleton.html" rel="canonical"/><script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Principia Nugae", "item": "https://markpbaggett.github.io"}, {"@type": "ListItem", "position": 2, "name": "Libcal borg singleton", "item": "https://markpbaggett.github.io/libcal-borg-singleton.html"}]}</script><script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "author": {"@type": "Person", "name": "Mark Baggett"}, "publisher": {"@type": "Organization", "name": "Principia Nugae"}, "headline": "Using the Borg Pattern to Cache Content in a Serverless Application", "about": "python", "datePublished": "2022-08-25 00:00"}</script></head>
+<body>
+<div class="container">
+<div class="page-header">
+<a class="avatar-container pull-left" href=".">
+<div class="avatar">
+<div class="side"><img class="img-responsive" src="https://avatars.githubusercontent.com/u/2692416?v=4"/></div>
+</div>
+</a>
+<h1><a href=".">Principia Nugae</a> <small></small></h1>
+</div>
+<nav class="navbar navbar-default">
+<!-- Hamburger menu for mobile -->
+<div class="navbar-header">
+<button aria-expanded="false" class="navbar-toggle collapsed" data-target="#plumage-navbar-collapse-1" data-toggle="collapse" type="button">
+<span class="sr-only">Toggle navigation</span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+</button>
+<a class="navbar-brand" href="." title="">Principia Nugae</a>
+</div>
+<!-- Menus and search forms -->
+<div class="collapse navbar-collapse" id="plumage-navbar-collapse-1">
+<ul class="nav navbar-nav">
+<li>
+<a href="./pages/about.html">About</a>
+</li>
+<li>
+<a href="./category/iiif.html">iiif</a>
+</li>
+<li>
+<a href="./category/misc.html">misc</a>
+</li>
+<li class="active">
+<a href="./category/python.html">python <span class="sr-only">(current)</span></a>
+</li>
+</ul>
+</div>
+</nav>
+</div>
+<div class="container main">
+<div class="row">
+<div class="col-md-9">
+<h1>
+<a href="./libcal-borg-singleton.html" rel="bookmark" title="Permalink to Using the Borg Pattern to Cache Content in a Serverless Application">Using the Borg Pattern to Cache Content in a Serverless Application</a>
+</h1>
+</div>
+</div>
+<div class="row">
+<div class="col-md-9" id="content" role="main">
+<div>
+<p>As a librarian who occasionally writes code, my utilization of proven design patterns and programming idioms is mixed at
 best. The truth is almost all of my programming and development skills were acquired on my own through trial and error
 without the benefit of trainings, collaboration, or reading definitive literature such as
 <a class="reference external" href="https://springframework.guru/gang-of-four-design-patterns/">Design Patterns: Elements of Reusable Object-Oriented Software</a>.
@@ -124,7 +96,7 @@ application going, but haven't done much to modernize or redevelop it because of
 students reserve rooms via LibCal.  Each room has an attached RoomWizard from Steelcase. Archimedes sits in the middle
 and queries LibCal for reservations students make every few minutes.  Each RoomWizard then makes requests to Archimedes
 and is provided an XML response with its booking information formatted according to the <a class="reference external" href="https://resources.steelcase.com/techsupport/TSUP/RoomWizard/Documentation/roomwizard_api.pdf">RoomWizard API</a>.</p>
-<p>As legacy applications do, archimedes finally &quot;broke&quot; in late June of this year. Rather than spend a significant amount
+<p>As legacy applications do, archimedes finally "broke" in late June of this year. Rather than spend a significant amount
 of time refactoring the existing application, I decided to use the opportunity to rethink the original approach and
 develop an application that I could more easily maintain. My primary goals were to:
 1. develop something in pure Python (the language I'm most comfortable in), 2. design it to be serverless (for portability),
@@ -137,17 +109,17 @@ interfaces with the LibCal API and implements the RoomWizard connector API. The 
 There is a configuration file that defines LibCal authentication and how often API requests are made to LibCal. In order to be good stewards, we strive not to make unnecessary requests to LibCal.  Instead, the connector makes a
 request to LibCal once every 10 minutes.  The results are cached, and each RoomWizard queries the cached results every
 10 minutes.</p>
-<img alt="Bob Odenkirk as Wizzard from Tom Goes to the Mayor" src="images/wizzard.jpeg" style="width: 600px;" />
+<img alt="Bob Odenkirk as Wizzard from Tom Goes to the Mayor" src="images/wizzard.jpeg" style="width: 600px;"/>
 <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
 <span class="normal">2</span>
 <span class="normal">3</span>
 <span class="normal">4</span>
 <span class="normal">5</span>
-<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><span class="nt">&lt;kwe:result</span> <span class="na">xmlns:kwe=</span><span class="s">&quot;http://www.appliancestudio.com/kwe/1.0/&quot;</span><span class="nt">&gt;</span>
+<span class="normal">6</span></pre></div></td><td class="code"><div><pre><span></span><span class="nt">&lt;kwe:result</span> <span class="na">xmlns:kwe=</span><span class="s">"http://www.appliancestudio.com/kwe/1.0/"</span><span class="nt">&gt;</span>
   <span class="nt">&lt;kwe:date&gt;</span>20220824<span class="nt">&lt;/kwe:date&gt;</span>
   <span class="nt">&lt;kwe:time&gt;</span>094101<span class="nt">&lt;/kwe:time&gt;</span>
   <span class="nt">&lt;kwe:result_code&gt;</span>0<span class="nt">&lt;/kwe:result_code&gt;</span>
-  <span class="nt">&lt;rb:bookings</span> <span class="na">xmlns:rb=</span><span class="s">&quot;http://www.appliancestudio.com/rb/1.0/&quot;</span> <span class="na">room_id=</span><span class="s">&quot;LIB_605&quot;</span><span class="nt">/&gt;</span>
+  <span class="nt">&lt;rb:bookings</span> <span class="na">xmlns:rb=</span><span class="s">"http://www.appliancestudio.com/rb/1.0/"</span> <span class="na">room_id=</span><span class="s">"LIB_605"</span><span class="nt">/&gt;</span>
 <span class="nt">&lt;/kwe:result&gt;</span>
 </pre></div></td></tr></table></div>
 <p>Without question, the most complex piece of the application is handling cache. Again, for the sake of portability, I
@@ -218,7 +190,7 @@ cache from LibCal in a variable called <code>all_current_bookings</code>.</p>
 <span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><span class="kn">from</span> <span class="nn">libcal.libcal</span> <span class="kn">import</span> <span class="n">RoomBookings</span>
 <span class="kn">from</span> <span class="nn">cache.libcal</span> <span class="kn">import</span> <span class="n">LibCalCache</span>
 
-<span class="n">booking_data</span> <span class="o">=</span> <span class="n">RoomBookings</span><span class="p">(</span><span class="s1">&#39;10024&#39;</span><span class="p">,</span> <span class="n">arrow</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;YYYYMMDD&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">get_bookings</span><span class="p">()</span>
+<span class="n">booking_data</span> <span class="o">=</span> <span class="n">RoomBookings</span><span class="p">(</span><span class="s1">'10024'</span><span class="p">,</span> <span class="n">arrow</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">'YYYYMMDD'</span><span class="p">))</span><span class="o">.</span><span class="n">get_bookings</span><span class="p">()</span>
 <span class="n">all_current_bookings</span> <span class="o">=</span> <span class="n">LibCalCache</span><span class="p">(</span><span class="n">booking_data</span><span class="p">)</span>
 </pre></div></td></tr></table></div>
 <p>Then, <code>apscheduler</code> updates this every 600 seconds with an interval task. Technically, it defines a new variable
@@ -227,10 +199,10 @@ but it updates the state of the initial instance each time a new one is created.
 <span class="normal">2</span>
 <span class="normal">3</span>
 <span class="normal">4</span>
-<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><span class="nd">@scheduler</span><span class="o">.</span><span class="n">task</span><span class="p">(</span><span class="s1">&#39;interval&#39;</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="s1">&#39;libcal&#39;</span><span class="p">,</span> <span class="n">seconds</span><span class="o">=</span><span class="mi">600</span><span class="p">,</span> <span class="n">misfire_grace_time</span><span class="o">=</span><span class="mi">900</span><span class="p">)</span>
+<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><span class="nd">@scheduler</span><span class="o">.</span><span class="n">task</span><span class="p">(</span><span class="s1">'interval'</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="s1">'libcal'</span><span class="p">,</span> <span class="n">seconds</span><span class="o">=</span><span class="mi">600</span><span class="p">,</span> <span class="n">misfire_grace_time</span><span class="o">=</span><span class="mi">900</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">job2</span><span class="p">():</span>
-    <span class="sd">&quot;&quot;&quot;Updates the LibCal Cache that is passed to routes. Variable is a Borg Singleton that is garbage collected.&quot;&quot;&quot;</span>
-    <span class="n">booking_data</span> <span class="o">=</span> <span class="n">RoomBookings</span><span class="p">(</span><span class="s1">&#39;10024&#39;</span><span class="p">,</span> <span class="n">arrow</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;YYYYMMDD&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">get_bookings</span><span class="p">()</span>
+    <span class="sd">"""Updates the LibCal Cache that is passed to routes. Variable is a Borg Singleton that is garbage collected."""</span>
+    <span class="n">booking_data</span> <span class="o">=</span> <span class="n">RoomBookings</span><span class="p">(</span><span class="s1">'10024'</span><span class="p">,</span> <span class="n">arrow</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">'YYYYMMDD'</span><span class="p">))</span><span class="o">.</span><span class="n">get_bookings</span><span class="p">()</span>
     <span class="n">all_current_bookings_two</span> <span class="o">=</span> <span class="n">LibCalCache</span><span class="p">(</span><span class="n">booking_data</span><span class="p">)</span>
 </pre></div></td></tr></table></div>
 <p>Whenever the controller gets a request for an API response, that initial variable is always used.</p>
@@ -246,145 +218,107 @@ but it updates the state of the initial instance each time a new one is created.
 <span class="normal">10</span>
 <span class="normal">11</span>
 <span class="normal">12</span>
-<span class="normal">13</span></pre></div></td><td class="code"><div><pre><span></span><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/rwconnector&#39;</span><span class="p">)</span>
+<span class="normal">13</span></pre></div></td><td class="code"><div><pre><span></span><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">'/rwconnector'</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">rw_connector</span><span class="p">():</span>
-    <span class="sd">&quot;&quot;&quot;Routes GET requests to /rwconnector.</span>
+    <span class="sd">"""Routes GET requests to /rwconnector.</span>
 <span class="sd">    This route handles all traffic to /rwconnector. The route passes all HTTP parameters to the GetResponse in</span>
 <span class="sd">    the commands package. Because of that, both about_connector and get_bookings routing is handled here.</span>
 <span class="sd">    Returns:</span>
 <span class="sd">        tuple: A tuple with the appropriate XML response from the related API at index 0, 200 at index 1, and a dict</span>
 <span class="sd">        specifying the content type of the response at index 2.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">x</span> <span class="o">=</span> <span class="n">GetResponse</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">all_current_bookings</span><span class="o">.</span><span class="n">current</span><span class="p">,</span>
-                    <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">),</span> <span class="s1">&#39;version&#39;</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;version&#39;</span><span class="p">),</span> <span class="s1">&#39;short&#39;</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;short&#39;</span><span class="p">)}</span>
+                    <span class="p">{</span><span class="s1">'name'</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">'name'</span><span class="p">),</span> <span class="s1">'version'</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">'version'</span><span class="p">),</span> <span class="s1">'short'</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">'short'</span><span class="p">)}</span>
                     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">response</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;Content-Type&#39;</span><span class="p">:</span> <span class="s1">&#39;text/xml; charset=utf-8&#39;</span><span class="p">}</span>
+    <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">response</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="p">{</span><span class="s1">'Content-Type'</span><span class="p">:</span> <span class="s1">'text/xml; charset=utf-8'</span><span class="p">}</span>
 </pre></div></td></tr></table></div>
 <p>While there are likely countless ways the concept here could be done better, the challenge presented here and my approach
 to solving it taught me a few things. First, it reiterated to me the importance of improving awareness of design patterns
 and programming idioms even if you aren't using them daily.  By doing so, when you have a precarious challenge, you at
 least are aware there are proven solutions. Second, you can only learn so much by reading and writing code alone. Often
-when I hear librarians discuss &quot;how to learn to code,&quot; they talk about tutorials, stack overflow, or carpentry. Occasionally,
-you may hear better advice such as &quot;write something to automate a task for you.&quot; The advice I normally give (and have
+when I hear librarians discuss "how to learn to code," they talk about tutorials, stack overflow, or carpentry. Occasionally,
+you may hear better advice such as "write something to automate a task for you." The advice I normally give (and have
 often felt is best) is to read other people's code. By doing this you are introduced to new ways of doing things which
 can be critical when you are first starting out. But those things alone will only get you so far. Without awareness of
 the Borg pattern, I'm not sure my code of what it attempts to solve would ever be meaningful or understood by an individual
-who took my advice. This experience has convinced me that there is a definitive point where everyone who &quot;codes&quot; should familiarize themselves
+who took my advice. This experience has convinced me that there is a definitive point where everyone who "codes" should familiarize themselves
 the popular design patterns and programming idioms in the language and frameworks they use, and that time for me is now.</p>
-
-  </div>
-
-
-
-        </div>
-
-          <div class="col-md-3">
-  <div class="well">
-
-    <p><abbr title="2022-08-25T00:00:00-04:00"><i class="fa fa-calendar"></i> Thu 25 August 2022</abbr></p>
-
-      <p><address>
-        <i class="fa fa-user"></i> By
+</div>
+</div>
+<div class="col-md-3">
+<div class="well">
+<p><abbr title="2022-08-25T00:00:00-04:00"><i class="fa fa-calendar"></i> Thu 25 August 2022</abbr></p>
+<p><address>
+<i class="fa fa-user"></i> By
           <a href="./author/mark-baggett.html" rel="author">Mark Baggett</a>
-      </address></p>
-
-    <hr/>
-
-      <p>
-              <a href="./category/python.html" rel="tag"
-                  data-toggle="tooltip" class="label label-info"
-                  title="2 articles in this category">python</a>
-            <a href="/tag/singletons.html" data-toggle="tooltip"
-      class="label label-default"
-      title="1 article with this tag">singletons</a>
-            <a href="/tag/serverless.html" data-toggle="tooltip"
-      class="label label-default"
-      title="1 article with this tag">serverless</a>
-            <a href="/tag/libcal.html" data-toggle="tooltip"
-      class="label label-default"
-      title="1 article with this tag">libcal</a>
-            <a href="/tag/wizzard.html" data-toggle="tooltip"
-      class="label label-default"
-      title="1 article with this tag">wizzard</a>
-      </p>
-      <hr/>
-
-
-
-  </div>
-            
-          </div>
-
-      </div>
-
-    </div>
-
-    <!-- TODO: make footer sticky -->
-    <footer class="container-fluid">
-      <div class="container">
-        <div class="row">
-
-            <div class="col-md-2">
-                <h5>Social</h5>
-                <ul class="list-unstyled">
-                  <li>  <a href="https://github.com/markpbaggett">
-      <i class="fa fa-github"></i>
+</address></p>
+<hr/>
+<p>
+<a class="label label-info" data-toggle="tooltip" href="./category/python.html" rel="tag" title="2 articles in this category">python</a>
+<a class="label label-default" data-toggle="tooltip" href="/tag/singletons.html" title="1 article with this tag">singletons</a>
+<a class="label label-default" data-toggle="tooltip" href="/tag/serverless.html" title="1 article with this tag">serverless</a>
+<a class="label label-default" data-toggle="tooltip" href="/tag/libcal.html" title="1 article with this tag">libcal</a>
+<a class="label label-default" data-toggle="tooltip" href="/tag/wizzard.html" title="1 article with this tag">wizzard</a>
+</p>
+<hr/>
+</div>
+</div>
+</div>
+</div>
+<!-- TODO: make footer sticky -->
+<footer class="container-fluid">
+<div class="container">
+<div class="row">
+<div class="col-md-2">
+<h5>Social</h5>
+<ul class="list-unstyled">
+<li> <a href="https://github.com/markpbaggett">
+<i class="fa fa-github"></i>
     github
   </a></li>
-                </ul>
-            </div>
-            <div class="col-md-2">
-            </div>
-
-          <div class="col-md-2">
-            <h5>Browse content by</h5>
-            <ul class="list-unstyled">
-            </ul>
-          </div>
-
-          <div class="col-md-2 text-muted">
-            <h5>Copyright notice</h5>
-            <p>© Copyright 2022 Mark Baggett.</p>
-          </div>
-
-          <div class="col-md-2 text-muted">
-            <h5>Disclaimer</h5>
-              <p>Views expressed here are my own, but you should adopt them immediately.</p>
-          </div>
-
-          <div class="col-md-2">
-          </div>
-
-        </div>
-      </div>
-
-      <h5 class="text-right"><a href="#"><i class="fa fa-arrow-up"></i> Back to top</a></h5>
-
-      <div class="container">
-        <div class="row col-md-12 text-muted text-center">
+</ul>
+</div>
+<div class="col-md-2">
+</div>
+<div class="col-md-2">
+<h5>Browse content by</h5>
+<ul class="list-unstyled">
+</ul>
+</div>
+<div class="col-md-2 text-muted">
+<h5>Copyright notice</h5>
+<p>© Copyright 2022 Mark Baggett.</p>
+</div>
+<div class="col-md-2 text-muted">
+<h5>Disclaimer</h5>
+<p>Views expressed here are my own, but you should adopt them immediately.</p>
+</div>
+<div class="col-md-2">
+</div>
+</div>
+</div>
+<h5 class="text-right"><a href="#"><i class="fa fa-arrow-up"></i> Back to top</a></h5>
+<div class="container">
+<div class="row col-md-12 text-muted text-center">
           Site generated by <a href="https://getpelican.com"> Pelican</a>.<br/>
-          <a href="https://github.com/kdeldycke/plumage"> Plumage</a> theme by <a href="https://kevin.deldycke.com">Kevin Deldycke</a>.
+<a href="https://github.com/kdeldycke/plumage"> Plumage</a> theme by <a href="https://kevin.deldycke.com">Kevin Deldycke</a>.
         </div>
-      </div>
-
-    </footer>
-
-        <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-L1RWHJC0V7"></script>
-    <script>
+</div>
+</footer>
+<!-- Google tag (gtag.js) -->
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-L1RWHJC0V7"></script>
+<script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
 
       gtag('config', G-L1RWHJC0V7);
     </script>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/magnific-popup.js/1.1.0/jquery.magnific-popup.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fitvids/1.1.0/jquery.fitvids.min.js"></script>
-    <script src="./theme/js/jquery.mglass.js"></script>
-    <script src="./theme/js/application.js"></script>
-
-  </body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/magnific-popup.js/1.1.0/jquery.magnific-popup.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fitvids/1.1.0/jquery.fitvids.min.js"></script>
+<script src="./theme/js/jquery.mglass.js"></script>
+<script src="./theme/js/application.js"></script>
+</body>
 </html>
