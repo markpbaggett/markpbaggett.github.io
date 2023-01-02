@@ -81,6 +81,177 @@ private method that authenticates and connects to our Google Analytics data.
             )
             return build("analyticsreporting", "v4", credentials=credentials)
 
+Next, let's add a method to this class that will allow us to query GoogleAnalytics for unique page views to collection
+home pages where the home page is the landing page. Our method will take 4 arguments:  the collection home page, a token
+to get the next page of results in case the results exceed the limit, the start date of our query, and the end date. We
+will then set a variable for the request that uses this data to return the number of unique page views, the page path,
+the full referrer, and the source where the page exactly matches the landing page path. **Note**: this exact match isn't
+quite what we need and we will see why later. Next, in case there are multiple pages of results, we will add a conditional
+that converts the Google Analytics token and add it to our request dictionary in the correct property to return the
+correct page of results. Finally, we will do an HTTP GET request for the data.
+
+.. code-block:: python
+
+    def find_pages(self, page, token=None, start_date="45daysAgo", end_date="today"):
+        request = {
+            "reportRequests": [
+                {
+                    "viewId": self.view_id,
+                    "dateRanges": [
+                        {"startDate": start_date, "endDate": end_date}
+                    ],
+                    "metrics": [{"expression": "ga:uniquePageviews"}],
+                    "dimensions": [{"name": "ga:pagePath"}, {"name": "ga:fullReferrer"}, {"name": "ga:source"}],
+                    "pageSize": 10000,
+                    "dimensionFilterClauses": [
+                        {
+                            "filters": [
+                                {
+                                    "operator": "EXACT",
+                                    "dimensionName": "ga:landingPagePath",
+                                    "expressions": [
+                                        page
+                                    ]
+                                }
+                            ]
+                        }
+                    ],
+                }
+            ]
+        }
+        if token is not None:
+            request['reportRequests'][0]['pageToken'] = str(token)
+        return (
+            self.connection.reports()
+            .batchGet(
+                body=request
+            )
+            .execute()
+        )
+
+Finally, we will add another method that will interface with the method above and retrieve results depending on whether
+its the initial request or a subsequent. We will also add an exception in case the page we're querying has no results.
+
+.. code-block:: python
+
+    def process_pages(self, page, initial_pages=None, start_date=None, end_date=None):
+        if initial_pages is None and start_date is not None and end_date is not None:
+            current_set = self.find_pages(page, start_date=start_date, end_date=end_date)
+        elif initial_pages is None:
+            current_set = self.find_pages()
+        else:
+            current_set = initial_pages
+        try:
+            for view in current_set['reports'][0]['data']['rows']:
+                self.results.append(view)
+        except KeyError:
+            pass
+        if 'nextPageToken' in current_set['reports'][0]:
+            new_request = self.find_pages(token=current_set['reports'][0]['nextPageToken'])
+            return self.process_pages(new_request)
+        else:
+            return
+
+Next, let's add some code that will allow us to securely pass our credentials and keep our list of collections separate
+from our code. The list of collections will be stored as an array of strings in a :code:`collections` property in a yaml
+file. Then for each collection home page in our list, we will pass it to the class we defined earlier and retrieve all
+data over the past year.  Then, for each result, we will add its data to to a dictionary called :code:`all_sources` if
+the result page path exactly matches the inital one.  This is critical because Google Analytics exact filters do not remove
+results that include HTTP parameters. The data that we add to :code:`all_sources` will be the source and total views. If
+the source already exists in the dict, we will updata its value to include the new views.
+
+.. code-block:: python
+
+    if __name__ == "__main__":
+        import yaml
+        collections = yaml.safe_load(open('config.yml', 'r'))['collections']
+        connection = AnalyticsConnection(
+            credentials="connection.json",
+            view_id="118513499",
+        )
+        all_sources = {}
+        for collection in collections:
+            page = collection
+            connection.process_pages(page=page, start_date='365daysago', end_date='today',)
+            results = connection.results
+            for result in results:
+                """
+                Must ensure that the ga:pagePath is the same as what's in the config because ga:landingPagePaths do not
+                ignore HTTP parameters like queries
+                (e.g. digital.lib.utk.edu/collections/islandora/object/collections:volvoices?page=16).
+                """
+                if result['dimensions'][0] == collection:
+                    x = {
+                        'source': result['dimensions'][1],
+                        'views': int(result['metrics'][0]['values'][0]),
+                        "actual_source": result['dimensions'][2]
+                    }
+                    if x['actual_source'] not in all_sources:
+                        all_sources[x['actual_source']] = x['views']
+                    else:
+                        all_sources[x['actual_source']] += x['views']
+
+In order to help interpret results, we will create another class.  This class will do several helpful things including:
+1. show the results as percentages, 2. order the results from highest to lowest unique views, and 3. combine sources that
+are similar (e.g. 'search.google.com' and 'google', 'lm.facebook.com', and 'l.facebook.com', etc.).
+
+.. code-block:: python
+
+    class AnalyticsInterpretter:
+        def __init__(self, data):
+            self.original_data = self.__sort_traffic_sources(self.__combine_similar_sources(data))
+            self.total_views = self.__get_total_views(data)
+            self.data_as_percentages = self.__as_percentages()
+
+        @staticmethod
+        def __get_total_views(data):
+            total = 0
+            for k, v in data.items():
+                total += v
+            return total
+
+        def __as_percentages(self):
+            x = {}
+            for k, v in self.original_data.items():
+                x[k] = '{:.1%}'.format(v/self.total_views)
+            return x
+
+        def count_percentages(self):
+            total = 0
+            for k, v in self.data_as_percentages.items():
+                total = total + float(v.replace('%', ''))
+            return total
+
+        @staticmethod
+        def __sort_traffic_sources(sortable):
+            return dict(sorted(sortable.items(), key=lambda x: x[1], reverse=True))
+
+        @staticmethod
+        def __combine_similar_sources(data):
+            sources_to_replace = {
+                'search.google.com': 'google',
+                't.co': 'twitter',
+                'lm.facebook.com': 'facebook',
+                'l.facebook.com': 'facebook',
+                'us13.campaign-archive.com': 'mailchimp',
+            }
+            values_to_pop = []
+            values_to_add = []
+            for k, v in data.items():
+                if k in sources_to_replace:
+                    values_to_pop.append(k)
+                    values_to_add.append({ sources_to_replace[k]: v})
+            for value in values_to_pop:
+                data.pop(value)
+            for value in values_to_add:
+                for k, v in value.items():
+                    if k in data:
+                        data[k] += v
+                    else:
+                        data[k] = v
+            return data
+
+Finally, we can pass our data in :code:`all_sources` to our :code:`AnalyticsInterpretter` as necessary.
 
 Findings
 --------
