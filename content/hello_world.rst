@@ -5,6 +5,7 @@ Hello World!
 :slug: hello-world
 :authors: Mark Baggett
 :summary: Can anything be initiated without an obligatory hello world?
+:description: Can anything be initiated without an obligatory hello world?
 
 Hello World! Is there ever a more appropriate or trite first to anything? If there is, I am not aware of it.
 

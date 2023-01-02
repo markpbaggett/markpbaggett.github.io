@@ -7,7 +7,7 @@ Using the Borg Pattern to Cache Content in a Serverless Application
 :slug: libcal-borg-singleton
 :authors: Mark Baggett
 :summary: Why familiarizing yourself with design paterns and programming idioms is important even to novice coders.
-
+:description: Why familiarizing yourself with design paterns and programming idioms is important even to novice coders.
 
 As a librarian who occasionally writes code, my utilization of proven design patterns and programming idioms is mixed at
 best. The truth is almost all of my programming and development skills were acquired on my own through trial and error

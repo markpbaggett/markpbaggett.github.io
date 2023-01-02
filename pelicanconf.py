@@ -29,6 +29,7 @@ RELATIVE_URLS = True
 PLUGINS = (
     'social',
     "pelican.plugins.sitemap",
+    "pelican.plugins.seo"
 )
 
 # code blocks with line numbers
@@ -57,6 +58,6 @@ SITEMAP = {
 
 GOOGLE_ANALYTICS = "G-L1RWHJC0V7"
 SEO_REPORT = True
-SEO_ENHANCER = False
-SEO_ENHANCER_OPEN_GRAPH = False
-SEO_ENHANCER_TWITTER_CARDS = False
+SEO_ENHANCER = True
+SEO_ENHANCER_OPEN_GRAPH = True
+SEO_ENHANCER_TWITTER_CARDS = True

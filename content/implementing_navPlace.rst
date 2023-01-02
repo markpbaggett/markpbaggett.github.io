@@ -8,6 +8,7 @@ Implementing navPlace: Desires and Possibilities for Consuming Applications
 :authors: Mark Baggett
 :status: published
 :summary: Describes our implementation of the navPlace extension in our IIIF manifests and desires for future consuming applications
+:description: Describes our implementation of the navPlace extension in our IIIF manifests and desires for future consuming applications
 
 For many years, the University of Tennessee Libraries has utilized `GeoNames <https://www.geonames.org/>`_ as a source
 for dereferencing and reconciling geographic location data related to our works. The GeoNames API allows consumers to retrieve

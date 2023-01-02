@@ -7,6 +7,8 @@ Mistakes Were Made: Creating id Properties for Embedded Resources in IIIF Presen
 :slug: iiif-id-property
 :authors: Mark Baggett
 :summary: A closer look at the id property in IIIF Presentation, how we got it wrong, and the unintended consequences
+:description: A closer look at the id property in IIIF Presentation, how we got it wrong, and the unintended consequences
+
 
 The :code:`id` property is without a doubt one of the most prevalent properties found throughout a IIIF manifest. As the API
 documentation states, `all resource types <https://iiif.io/api/presentation/3.0/#5-resource-structure>`_ :code:`MUST`

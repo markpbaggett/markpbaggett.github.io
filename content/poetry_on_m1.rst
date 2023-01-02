@@ -1,5 +1,5 @@
-Addressing Self-Induced Poetry Environment Problems on my M! MacBook
-####################################################################
+Addressing Self-Induced Poetry Problems on my M1 MacBook
+########################################################
 
 :date: 2022-12-23
 :tags: poetry, m1, osx, macbook
@@ -7,6 +7,7 @@ Addressing Self-Induced Poetry Environment Problems on my M! MacBook
 :slug: poetry_on_m1
 :authors: Mark Baggett
 :summary: Moving from development on Linux and System 76 to an M1 Macbook is hard.  This article describes how I address poetry issues when things go wrong.
+:description: Moving from development on Linux and System 76 to an M1 Macbook is hard.  This article describes how I address poetry issues when things go wrong.
 
 Since 2015 or 2016, I have used System 76 laptops exclusively with Ubuntu or Pop 0S. Recently, a
 change in university procurement policy required me to switch my university issued System 76 Oryx Pro to either a M1
