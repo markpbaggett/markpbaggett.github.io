@@ -460,12 +460,73 @@ realize that 255 views equates to just 2.5 views from OneSearch per home page pe
 up the largest amount of direct traffic to collection home pages, it only accounts for 90 views per home page per year.
 What this reaffirms is that access to collections likely comes from our website or from individual works within our
 various collections.</p>
+<p>A closer look at the data reveals even more interesting findings. We can use this same dataset to find out which
+collection landing pages are found and accessed from Primo.  To do this, we just need to make a small modification to
+our code above.</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span></pre></div></td><td class="code"><div><pre><span></span><span class="n">primo_collections</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="k">for</span> <span class="n">collection</span> <span class="ow">in</span> <span class="n">collections</span><span class="p">:</span>
+    <span class="n">page</span> <span class="o">=</span> <span class="n">collection</span>
+    <span class="n">connection</span><span class="o">.</span><span class="n">process_pages</span><span class="p">(</span><span class="n">page</span><span class="o">=</span><span class="n">page</span><span class="p">,</span> <span class="n">start_date</span><span class="o">=</span><span class="s1">'365daysago'</span><span class="p">,</span> <span class="n">end_date</span><span class="o">=</span><span class="s1">'today'</span><span class="p">,)</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">results</span>
+    <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">result</span><span class="p">[</span><span class="s1">'dimensions'</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">collection</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">'source'</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="s1">'dimensions'</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
+                <span class="s1">'views'</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">'metrics'</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">'values'</span><span class="p">][</span><span class="mi">0</span><span class="p">]),</span>
+                <span class="s2">"actual_source"</span><span class="p">:</span> <span class="n">result</span><span class="p">[</span><span class="s1">'dimensions'</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+            <span class="p">}</span>
+            <span class="k">if</span> <span class="s2">"utk.primo.exlibrisgroup.com"</span> <span class="ow">in</span> <span class="n">x</span><span class="p">[</span><span class="s1">'source'</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">collection</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">primo_collections</span><span class="p">:</span>
+                    <span class="n">primo_collections</span><span class="p">[</span><span class="n">collection</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s1">'views'</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">primo_collections</span><span class="p">[</span><span class="n">collection</span><span class="p">]</span> <span class="o">+=</span> <span class="n">x</span><span class="p">[</span><span class="s1">'views'</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">primo_collections</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)))</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">primo_collections</span><span class="p">))</span>
+</pre></div></td></tr></table></div>
+<p>When we do this, we see that 28 collections have at least 1 click through from Primo per year, but the vast amount of
+searches go to one digital collection, <code>digital.lib.utk.edu/collections/islandora/object/collections:univcat</code>.
+This collection makes up 159 of the 255 results to Primo.  The next highest result is a 3 way tie at 13 per year:</p>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">1</span>
+<span class="normal">2</span>
+<span class="normal">3</span>
+<span class="normal">4</span>
+<span class="normal">5</span></pre></div></td><td class="code"><div><pre><span></span><span class="p">{</span>
+    <span class="s1">'digital.lib.utk.edu/collections/islandora/object/gsmrc:adams'</span><span class="p">:</span> <span class="mi">13</span><span class="p">,</span>
+    <span class="s1">'digital.lib.utk.edu/collections/islandora/object/collections:volvoices'</span><span class="p">:</span> <span class="mi">13</span><span class="p">,</span>
+    <span class="s1">'digital.lib.utk.edu/collections/islandora/object/collections:yrb'</span><span class="p">:</span> <span class="mi">13</span>
+<span class="p">}</span>
+</pre></div></td></tr></table></div>
+<p>While the 159 click-throughs is rather large, it's important to realize that the works in this one collection get no
+traffic once users are in our repository. You can see more about how are works are used <a class="reference external" href="https://datalore.jetbrains.com/notebook/AzBJPE2emhR5koAu0CCrhb/VooSnItrSX9UFC6LmGGXTS/">here</a>.
+We have hypothesized that this is because people are looking for our current data (which is not included here), but
+maybe that is wrong, and we need to investigate this more deeply. Regardless, it's clear that this traffic does not lead
+to users interacting with our content.</p>
 </div>
 <div class="section" id="conclusions">
 <h2>Conclusions</h2>
 <p>In my opinion, the 2.5 views that these OAI records account for per year do not justify creating these collection records
 or developing code to automate this. Instead, we should focus more energy on search engine optimization of our works
 (something that we don't do currently).</p>
+<p>Also, we should try to understand why users are coming from Primo into University Catalogs, but not interacting with any
+works once there.</p>
 </div>
 <div class="section" id="more-information">
 <h2>More Information</h2>
