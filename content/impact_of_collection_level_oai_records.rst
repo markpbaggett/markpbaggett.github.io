@@ -267,12 +267,60 @@ up the largest amount of direct traffic to collection home pages, it only accoun
 What this reaffirms is that access to collections likely comes from our website or from individual works within our
 various collections.
 
+A closer look at the data reveals even more interesting findings. We can use this same dataset to find out which
+collection landing pages are found and accessed from Primo.  To do this, we just need to make a small modification to
+our code above.
+
+.. code-block:: python
+    :hl_lines: 1, 13-19
+
+    primo_collections = {}
+    for collection in collections:
+        page = collection
+        connection.process_pages(page=page, start_date='365daysago', end_date='today',)
+        results = connection.results
+        for result in results:
+            if result['dimensions'][0] == collection:
+                x = {
+                    'source': result['dimensions'][1],
+                    'views': int(result['metrics'][0]['values'][0]),
+                    "actual_source": result['dimensions'][2]
+                }
+                if "utk.primo.exlibrisgroup.com" in x['source']:
+                    if collection not in primo_collections:
+                        primo_collections[collection] = x['views']
+                    else:
+                        primo_collections[collection] += x['views']
+    print(dict(sorted(primo_collections.items(), key=lambda x: x[1], reverse=True)))
+    print(len(primo_collections))
+
+When we do this, we see that 28 collections have at least 1 click through from Primo per year, but the vast amount of
+searches go to one digital collection, :code:`digital.lib.utk.edu/collections/islandora/object/collections:univcat`.
+This collection makes up 159 of the 255 results to Primo.  The next highest result is a 3 way tie at 13 per year:
+
+.. code-block:: python
+
+    {
+        'digital.lib.utk.edu/collections/islandora/object/gsmrc:adams': 13,
+        'digital.lib.utk.edu/collections/islandora/object/collections:volvoices': 13,
+        'digital.lib.utk.edu/collections/islandora/object/collections:yrb': 13
+    }
+
+While the 159 click-throughs is rather large, it's important to realize that the works in this one collection get no
+traffic once users are in our repository. You can see more about how are works are used `here <https://datalore.jetbrains.com/notebook/AzBJPE2emhR5koAu0CCrhb/VooSnItrSX9UFC6LmGGXTS/>`_.
+We have hypothesized that this is because people are looking for our current data (which is not included here), but
+maybe that is wrong, and we need to investigate this more deeply. Regardless, it's clear that this traffic does not lead
+to users interacting with our content.
+
 Conclusions
 -----------
 
 In my opinion, the 2.5 views that these OAI records account for per year do not justify creating these collection records
 or developing code to automate this. Instead, we should focus more energy on search engine optimization of our works
 (something that we don't do currently).
+
+Also, we should try to understand why users are coming from Primo into University Catalogs, but not interacting with any
+works once there.
 
 More Information
 ----------------
